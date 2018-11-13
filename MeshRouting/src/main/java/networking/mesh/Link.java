@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package networking.mesh;
 
@@ -7,6 +7,12 @@ package networking.mesh;
  * @author emily
  *
  */
-public interface Link {
+public interface Link
+{
+
+	/**
+	 *
+	 * @return Link ID
+	 */
 	int getID();
 }
