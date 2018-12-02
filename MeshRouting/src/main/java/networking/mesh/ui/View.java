@@ -72,6 +72,22 @@ public class View extends JFrame implements ModelListener
 		final JMenuBar menuBar = new JMenuBar();
 		menuBar.add(file);
 
+		file.addSeparator();
+
+		file.add(new AbstractAction("Exit")
+		{
+			/**
+			 *
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void actionPerformed(final ActionEvent e)
+			{
+				System.exit(0);
+			}
+		});
+
 		this.setJMenuBar(menuBar);
 	}
 
