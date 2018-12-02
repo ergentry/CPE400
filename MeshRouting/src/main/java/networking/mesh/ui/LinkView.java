@@ -10,13 +10,15 @@ import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 
 import networking.mesh.Link;
+import networking.mesh.LinkDirection;
+import networking.mesh.Message;
 import networking.mesh.Model;
 
 public class LinkView extends JPanel
 {
 	private static final long serialVersionUID = 1L;
-	LinkViewModel model;
-	JTable table;
+	private final LinkViewModel model;
+	private final JTable table;
 
 	LinkView(final Model model)
 	{
@@ -52,13 +54,22 @@ public class LinkView extends JPanel
 		@Override
 		public int getColumnCount()
 		{
-			return 1;
+			return 3;
 		}
 
 		@Override
 		public String getColumnName(final int columnIndex)
 		{
-			return "Link ID";
+			switch (columnIndex)
+			{
+				case 0:
+					return "Link ID";
+				case 1:
+					return "Left";
+				case 2:
+					return "Right";
+			}
+			throw new IllegalArgumentException();
 		}
 
 		@Override
@@ -72,7 +83,19 @@ public class LinkView extends JPanel
 		{
 			final List<Link> links = new ArrayList<>(this.model.getEdges());
 			Collections.sort(links);
-			return links.get(rowIndex);
+			final Link link = links.get(rowIndex);
+			switch (columnIndex)
+			{
+				case 0:
+					return link.getID();
+				case 1:
+					final Message leftMessage = link.getMessage(LinkDirection.Left_To_Right);
+					return leftMessage != null ? leftMessage.getID() : "";
+				case 2:
+					final Message rightMessage = link.getMessage(LinkDirection.Right_To_Left);
+					return rightMessage != null ? rightMessage.getID() : "";
+			}
+			throw new IllegalArgumentException();
 		}
 
 	}

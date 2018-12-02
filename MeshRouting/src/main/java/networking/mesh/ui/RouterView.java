@@ -15,12 +15,12 @@ import networking.mesh.Router;
 public class RouterView extends JPanel
 {
 	private static final long serialVersionUID = 1L;
-	NodeListViewModel model;
-	JTable table;
+	private final RouterListViewModel model;
+	private final JTable table;
 
 	RouterView(final Model model)
 	{
-		this.model = new NodeListViewModel(model);
+		this.model = new RouterListViewModel(model);
 		this.table = new JTable(this.model);
 		final JScrollPane scroll = new JScrollPane(this.table);
 		this.add(scroll);
@@ -33,12 +33,12 @@ public class RouterView extends JPanel
 		super.invalidate();
 	}
 
-	static class NodeListViewModel extends AbstractTableModel
+	static class RouterListViewModel extends AbstractTableModel
 	{
 		private static final long serialVersionUID = 1L;
 		Model model;
 
-		NodeListViewModel(final Model model)
+		RouterListViewModel(final Model model)
 		{
 			this.model = model;
 		}
@@ -52,13 +52,20 @@ public class RouterView extends JPanel
 		@Override
 		public int getColumnCount()
 		{
-			return 1;
+			return 2;
 		}
 
 		@Override
 		public String getColumnName(final int columnIndex)
 		{
-			return "Node ID";
+			switch (columnIndex)
+			{
+				case 0:
+					return "Router ID";
+				case 1:
+					return "Queue Size";
+			}
+			throw new IllegalArgumentException();
 		}
 
 		@Override
@@ -70,9 +77,18 @@ public class RouterView extends JPanel
 		@Override
 		public Object getValueAt(final int rowIndex, final int columnIndex)
 		{
-			final List<Router> nodes = new ArrayList<>(this.model.getVertices());
-			Collections.sort(nodes);
-			return nodes.get(rowIndex);
+			final List<Router> routers = new ArrayList<>(this.model.getVertices());
+			Collections.sort(routers);
+			final Router router = routers.get(rowIndex);
+			switch (columnIndex)
+			{
+				case 0:
+					return router.getID();
+				case 1:
+					return router.getQueue().size();
+			}
+			throw new IllegalArgumentException();
+
 		}
 
 	}
