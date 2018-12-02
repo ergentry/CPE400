@@ -6,8 +6,13 @@
  * user guide available at https://docs.gradle.org/4.3/userguide/java_library_plugin.html
  */
 
-// Apply the java-library plugin to add support for Java Library
-apply plugin: 'java'
+ plugins {
+	 id 'application'
+ }
+
+defaultTasks 'clean', 'run'
+
+mainClassName = 'networking.mesh.MeshMain'
 
 // In this section you declare where to find the dependencies of your project
 repositories {
