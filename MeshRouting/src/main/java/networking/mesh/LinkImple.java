@@ -14,6 +14,10 @@ public class LinkImple implements Link {
 
 		private Model model;
 
+		private Router leftRouter;
+
+		private Router rightRouter;
+
 		Builder() {
 			// empty
 		}
@@ -26,8 +30,16 @@ public class LinkImple implements Link {
 			return this.id;
 		}
 
+		Router getLeftRouter() {
+			return leftRouter;
+		}
+
 		Model getModel() {
 			return this.model;
+		}
+
+		Router getRightRouter() {
+			return rightRouter;
 		}
 
 		public Builder setId(final int id) {
@@ -35,8 +47,18 @@ public class LinkImple implements Link {
 			return this;
 		}
 
+		public Builder setLeftRouter(Router left) {
+			this.leftRouter = left;
+			return this;
+		}
+
 		public Builder setModel(final Model model) {
 			this.model = model;
+			return this;
+		}
+
+		public Builder setRightRouter(Router right) {
+			this.rightRouter = right;
 			return this;
 		}
 	}
@@ -45,13 +67,23 @@ public class LinkImple implements Link {
 		return new Builder();
 	}
 
+	private final Router leftRouter;
+
+	private final Router rightRouter;
+
 	private final int id;
 
 	private final Model model;
 
+	private volatile Message leftToRight;
+
+	private volatile Message rightToLeft;
+
 	LinkImple(final Builder builder) {
 		this.id = builder.getId();
 		this.model = builder.getModel();
+		this.leftRouter = builder.getLeftRouter();
+		this.rightRouter = builder.getRightRouter();
 	}
 
 	@Override
@@ -77,13 +109,39 @@ public class LinkImple implements Link {
 		return true;
 	}
 
+	public int getId() {
+		return id;
+	}
+
 	@Override
 	public int getID() {
 		return this.id;
 	}
 
+	public Router getLeftRouter() {
+		return leftRouter;
+	}
+
+	public Message getLeftToRight() {
+		return leftToRight;
+	}
+
+	@Override
+	public Message getMessage(LinkDirection direction) {
+
+		return direction == LinkDirection.Left_To_Right ? leftToRight : rightToLeft;
+	}
+
 	public Model getModel() {
 		return this.model;
+	}
+
+	public Router getRightRouter() {
+		return rightRouter;
+	}
+
+	public Message getRightToLeft() {
+		return rightToLeft;
 	}
 
 	@Override
@@ -95,13 +153,28 @@ public class LinkImple implements Link {
 	}
 
 	@Override
-	public boolean inUse() {
-		return false;
+	public synchronized boolean inUse(LinkDirection direction) {
+		return direction == LinkDirection.Left_To_Right ? leftToRight != null : rightToLeft != null;
 	}
 
 	@Override
 	public String toString() {
 		return Integer.toString(id);
+	}
+
+	@Override
+	public boolean transmitMessage(LinkDirection direction, Message message) {
+
+		if (inUse(direction)) {
+			return false;
+		}
+		if (direction == LinkDirection.Left_To_Right) {
+			leftToRight = message;
+		} else {
+			rightToLeft = message;
+		}
+		// signal delay
+		return true;
 	}
 
 }
