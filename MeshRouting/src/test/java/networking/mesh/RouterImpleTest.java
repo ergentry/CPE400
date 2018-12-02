@@ -19,6 +19,18 @@ public class RouterImpleTest {
 	}
 
 	@Test
+	public void testRouteMessage() {
+		final Router left = model.getNodeFactory().create();
+		final Router right = model.getNodeFactory().create();
+		final Link link = model.getLinkFactory().create();
+		model.addEdge(link, left, right);
+		final Message message = model.newDataMessage(left, right, 2000);
+		left.routeMessage(message);
+		Assert.assertEquals(message, link.getMessage(LinkDirection.Left_To_Right));
+
+	}
+
+	@Test
 	public void testSendMessage() {
 
 		final Router source = RouterImple.newInstance().setModel(model).setId(1).build();

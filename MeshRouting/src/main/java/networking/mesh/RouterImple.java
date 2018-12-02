@@ -3,6 +3,7 @@
  */
 package networking.mesh;
 
+import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -105,8 +106,32 @@ public class RouterImple implements Router {
 	}
 
 	@Override
-	public void routeMessage(Message message, Router transmitter) {
+	public void routeMessage(Message message) {
+		if (message.getDestination() == this) {
+			message.setMessageState(MessageState.RECEIVED);
+		}
+		final Collection<Link> links = this.model.getIncidentEdges(this);
+		for (final Link link : links) {
+			final Collection<Router> routers = model.getIncidentVertices(link);
+			for (final Router router : routers) {
+				if (router == message.getDestination()) {
+					final LinkDirection direction = this.id < router.getID() ? LinkDirection.Left_To_Right
+							: LinkDirection.Right_To_Left;
+					if (link.inUse(direction)) {
+						message.setMessageState(MessageState.ENQUEUED);
+						messageQueue.add(message);
+						return;
+					} else {
+						message.setMessageState(MessageState.IN_TRANSIT);
+						link.transmitMessage(direction, message);
+						return;
+					}
+				}
+			}
+		}
 
+		// COOL ROUTING ALGORITHM HERE
+		message.setMessageState(MessageState.UNROUTABLE);
 	}
 
 	@Override

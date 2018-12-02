@@ -67,9 +67,9 @@ public class LinkImple implements Link {
 		return new Builder();
 	}
 
-	private final Router leftRouter;
+	private volatile Router leftRouter;
 
-	private final Router rightRouter;
+	private volatile Router rightRouter;
 
 	private final int id;
 
@@ -155,6 +155,16 @@ public class LinkImple implements Link {
 	@Override
 	public synchronized boolean inUse(LinkDirection direction) {
 		return direction == LinkDirection.Left_To_Right ? leftToRight != null : rightToLeft != null;
+	}
+
+	@Override
+	public void setLeftRouter(Router left) {
+		this.leftRouter = left;
+	}
+
+	@Override
+	public void setRightRouter(Router right) {
+		this.rightRouter = right;
 	}
 
 	@Override

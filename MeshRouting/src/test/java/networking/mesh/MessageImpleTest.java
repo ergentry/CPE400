@@ -28,7 +28,7 @@ public class MessageImpleTest {
 		}
 
 		@Override
-		public void routeMessage(Message message, Router transmitter) {
+		public void routeMessage(Message message) {
 			// TODO Auto-generated method stub
 
 		}
