@@ -3,6 +3,9 @@
  */
 package networking.mesh;
 
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+
 /**
  * @author emily
  *
@@ -46,10 +49,13 @@ public class RouterImple implements Router {
 
 	private final int id;
 
+	private final Queue<Message> messageQueue;
+
 	private final Model model;
 
 	RouterImple(final Builder builder) {
 		this.id = builder.getId();
+		this.messageQueue = new ArrayBlockingQueue<Message>(100);
 		this.model = builder.getModel();
 	}
 
@@ -86,11 +92,29 @@ public class RouterImple implements Router {
 	}
 
 	@Override
+	public Queue<Message> getQueue() {
+		return messageQueue;
+	}
+
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + id;
 		return result;
+	}
+
+	@Override
+	public void routeMessage(Message message, Router transmitter) {
+
+	}
+
+	@Override
+	public void sendMessage(Router dest, int length) {
+		final Message message = model.newDataMessage(this, dest, length);
+		message.setMessageState(MessageState.ENQUEUED);
+		messageQueue.add(message);
+
 	}
 
 	@Override

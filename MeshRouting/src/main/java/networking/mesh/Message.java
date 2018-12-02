@@ -7,8 +7,7 @@ package networking.mesh;
  * @author emily
  *
  */
-public interface Message extends Comparable<Message>
-{
+public interface Message extends Comparable<Message> {
 	/**
 	 *
 	 * @param messageListener
@@ -68,6 +67,8 @@ public interface Message extends Comparable<Message>
 	 * @param messageListener
 	 */
 	void removeMessageListener(MessageListener messageListener);
+
+	void setMessageState(MessageState state);
 
 	/**
 	 *

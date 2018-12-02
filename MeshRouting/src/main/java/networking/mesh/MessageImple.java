@@ -210,6 +210,11 @@ public class MessageImple implements Message {
 	}
 
 	@Override
+	public void setMessageState(MessageState state) {
+		this.messageState = state;
+	}
+
+	@Override
 	public void setTTL(final int ttl) {
 		this.TTL = ttl;
 
