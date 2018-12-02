@@ -1,0 +1,26 @@
+/*
+ * EdgeMenuListener.java
+ *
+ * Created on March 21, 2007, 2:41 PM; Updated May 29, 2007
+ * Copyright March 21, 2007 Grotto Networking
+ */
+package networking.mesh.ui.mouseplugin;
+
+import edu.uci.ics.jung.visualization.VisualizationViewer;
+
+/**
+ * An interface for menu items that are interested in knowning the currently
+ * selected edge and its visualization component context. Used with
+ * PopupVertexEdgeMenuMousePlugin.
+ *
+ * @author Dr. Greg M. Bernstein
+ */
+public interface EdgeMenuListener<V, E>
+{
+	/**
+	 *
+	 * @param e
+	 * @param visView
+	 */
+	void setEdgeAndView(E e, VisualizationViewer<V, E> visView);
+}

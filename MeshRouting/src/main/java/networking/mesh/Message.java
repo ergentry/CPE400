@@ -7,7 +7,14 @@ package networking.mesh;
  * @author emily
  *
  */
-public interface Message {
+public interface Message extends Comparable<Message>
+{
+	/**
+	 *
+	 * @param messageListener
+	 */
+	void addMessageListener(MessageListener messageListener);
+
 	/**
 	 *
 	 * @return Message destination
@@ -25,6 +32,12 @@ public interface Message {
 	 * @return Message length
 	 */
 	int getLength();
+
+	/**
+	 *
+	 * @return the message state
+	 */
+	MessageState getMessageState();
 
 	/**
 	 *
@@ -49,6 +62,12 @@ public interface Message {
 	 * @return Message time to live. 0 means message is expired
 	 */
 	int getTTL();
+
+	/**
+	 *
+	 * @param messageListener
+	 */
+	void removeMessageListener(MessageListener messageListener);
 
 	/**
 	 *

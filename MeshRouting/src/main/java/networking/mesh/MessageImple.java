@@ -3,110 +3,33 @@
  */
 package networking.mesh;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author emily
  *
  */
-public class MessageImple implements Message {
+public class MessageImple implements Message
+{
 
-	public static class Builder {
-		private int ttl;
-		private Router source;
-		private Router destination;
-		private int length;
-		private byte[] payload;
-		private int priority;
-		private int id;
-
-		Builder() {
-			this.ttl = 15;
-			this.priority = 0;
-		}
-
-		public MessageImple build() {
-			return new MessageImple(this);
-		}
-
-		Router getDestination() {
-			return destination;
-		}
-
-		int getId() {
-			return id;
-		}
-
-		int getLength() {
-			return length;
-		}
-
-		byte[] getPayload() {
-			return payload;
-		}
-
-		int getPriority() {
-			return priority;
-		}
-
-		Router getSource() {
-			return source;
-		}
-
-		int getTtl() {
-			return ttl;
-		}
-
-		public Builder setDestination(Router destination) {
-			this.destination = destination;
-			return this;
-		}
-
-		public Builder setId(int id) {
-			this.id = id;
-			return this;
-		}
-
-		public Builder setLength(int length) {
-			this.length = length;
-			return this;
-		}
-
-		public Builder setPayload(byte[] payload) {
-			this.payload = payload;
-			return this;
-		}
-
-		public Builder setPriority(int priority) {
-			this.priority = priority;
-			return this;
-		}
-
-		public Builder setSource(Router source) {
-			this.source = source;
-			return this;
-		}
-
-		public Builder setTtl(int ttl) {
-			this.ttl = ttl;
-			return this;
-		}
-
-	}
-
-	public static Builder newInstance() {
+	public static Builder newInstance()
+	{
 		return new Builder();
 	}
 
+	private final Router destination;
 	private final int id;
 	private final int length;
-	private final Router destination;
+	private final List<MessageListener> listeners;
+	private volatile MessageState messageState;
 	private final byte[] payload;
 	private final int priority;
-
 	private final Router source;
-
 	private int TTL;
 
-	MessageImple(Builder builder) {
+	MessageImple(final Builder builder)
+	{
 		this.id = builder.getId();
 		this.length = builder.getLength();
 		this.destination = builder.getDestination();
@@ -114,51 +37,185 @@ public class MessageImple implements Message {
 		this.priority = builder.getPriority();
 		this.source = builder.getSource();
 		this.TTL = builder.getTtl();
+		this.messageState = MessageState.CREATED;
+		this.listeners = new ArrayList<>();
 	}
 
 	@Override
-	public Router getDestination() {
-		return destination;
+	public void addMessageListener(final MessageListener messageListener)
+	{
+		this.listeners.add(messageListener);
 	}
 
 	@Override
-	public int getID() {
-
-		return id;
+	public int compareTo(final Message o)
+	{
+		return Integer.compare(this.id, o.getID());
 	}
 
 	@Override
-	public int getLength() {
-		return length;
+	public Router getDestination()
+	{
+		return this.destination;
 	}
 
 	@Override
-	public byte[] getPayload() {
+	public int getID()
+	{
 
-		return payload;
+		return this.id;
 	}
 
 	@Override
-	public int getPriority() {
-
-		return priority;
+	public int getLength()
+	{
+		return this.length;
 	}
 
 	@Override
-	public Router getSource() {
-
-		return source;
+	public MessageState getMessageState()
+	{
+		return this.messageState;
 	}
 
 	@Override
-	public int getTTL() {
+	public byte[] getPayload()
+	{
 
-		return TTL;
+		return this.payload;
 	}
 
 	@Override
-	public void setTTL(int ttl) {
+	public int getPriority()
+	{
+
+		return this.priority;
+	}
+
+	@Override
+	public Router getSource()
+	{
+
+		return this.source;
+	}
+
+	@Override
+	public int getTTL()
+	{
+
+		return this.TTL;
+	}
+
+	@Override
+	public void removeMessageListener(final MessageListener messageListener)
+	{
+		this.listeners.remove(messageListener);
+	}
+
+	@Override
+	public void setTTL(final int ttl)
+	{
 		this.TTL = ttl;
+
+	}
+
+	public static class Builder
+	{
+		private Router destination;
+		private int id;
+		private int length;
+		private byte[] payload;
+		private int priority;
+		private Router source;
+		private int ttl;
+
+		Builder()
+		{
+			this.ttl = 15;
+			this.priority = 0;
+		}
+
+		public MessageImple build()
+		{
+			return new MessageImple(this);
+		}
+
+		public Builder setDestination(final Router destination)
+		{
+			this.destination = destination;
+			return this;
+		}
+
+		public Builder setId(final int id)
+		{
+			this.id = id;
+			return this;
+		}
+
+		public Builder setLength(final int length)
+		{
+			this.length = length;
+			return this;
+		}
+
+		public Builder setPayload(final byte[] payload)
+		{
+			this.payload = payload;
+			return this;
+		}
+
+		public Builder setPriority(final int priority)
+		{
+			this.priority = priority;
+			return this;
+		}
+
+		public Builder setSource(final Router source)
+		{
+			this.source = source;
+			return this;
+		}
+
+		public Builder setTtl(final int ttl)
+		{
+			this.ttl = ttl;
+			return this;
+		}
+
+		Router getDestination()
+		{
+			return this.destination;
+		}
+
+		int getId()
+		{
+			return this.id;
+		}
+
+		int getLength()
+		{
+			return this.length;
+		}
+
+		byte[] getPayload()
+		{
+			return this.payload;
+		}
+
+		int getPriority()
+		{
+			return this.priority;
+		}
+
+		Router getSource()
+		{
+			return this.source;
+		}
+
+		int getTtl()
+		{
+			return this.ttl;
+		}
 
 	}
 }
