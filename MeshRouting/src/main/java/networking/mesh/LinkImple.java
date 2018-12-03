@@ -213,21 +213,30 @@ public class LinkImple implements Link, Runnable {
 	@Override
 	public void sendMessage(final LinkDirection direction, final Message message) {
 		LOGGER.info("Sending message on its way " + direction + " " + message.getDestination().getID());
-		final Pair<Router> routers = this.model.getEndpoints(this);
-		final Router left = routers.getFirst().getID() < routers.getSecond().getID() ? routers.getFirst()
-				: routers.getSecond();
-		final Router right = routers.getFirst().getID() > routers.getSecond().getID() ? routers.getFirst()
-				: routers.getSecond();
-		if (direction == LinkDirection.Left_To_Right) {
-			LOGGER.info("Routing to " + right.getID());
-			right.routeMessage(message);
-			leftToRight = null;
-		} else {
-			LOGGER.info("Routing to " + left.getID());
-			left.routeMessage(message);
-			rightToLeft = null;
+		try {
+			final Pair<Router> routers = this.model.getEndpoints(this);
+
+			if (routers == null || routers.getFirst() == null || routers.getSecond() == null) {
+				message.setMessageState(MessageState.DROPPED);
+			}
+
+			final Router left = routers.getFirst().getID() < routers.getSecond().getID() ? routers.getFirst()
+					: routers.getSecond();
+			final Router right = routers.getFirst().getID() > routers.getSecond().getID() ? routers.getFirst()
+					: routers.getSecond();
+			if (direction == LinkDirection.Left_To_Right) {
+				LOGGER.info("Routing to " + right.getID());
+				right.routeMessage(message);
+				leftToRight = null;
+			} else {
+				LOGGER.info("Routing to " + left.getID());
+				left.routeMessage(message);
+				rightToLeft = null;
+			}
+			this.model.notifyModelChanged();
+		} catch (final NullPointerException e) {
+			message.setMessageState(MessageState.DROPPED);
 		}
-		this.model.notifyModelChanged();
 	}
 
 	@Override
@@ -261,7 +270,7 @@ public class LinkImple implements Link, Runnable {
 
 	@Override
 	public String toString() {
-		return Integer.toString(id);
+		return "L" + id;
 	}
 
 	@Override

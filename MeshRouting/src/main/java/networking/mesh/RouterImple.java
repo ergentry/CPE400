@@ -123,30 +123,34 @@ public class RouterImple implements Router, Runnable {
 		LOGGER.info("Router: " + getID() + " Routing message " + message.getID() + " " + message.getSource().getID()
 				+ " -> " + message.getDestination().getID());
 
-		if (message.getDestination() == this) {
-			message.setMessageState(MessageState.RECEIVED);
-			return;
-		}
-
-		// LOOK at our neighbors
-		final Collection<Link> links = this.model.getIncidentEdges(this);
-		for (final Link link : links) {
-			final Router router = model.getOpposite(this, link);
-			if (router == message.getDestination()) {
-				routeMessage(router, link, message);
+		try {
+			if (message.getDestination() == this) {
+				message.setMessageState(MessageState.RECEIVED);
 				return;
 			}
-		}
 
-		// COOL ROUTING ALGORITHM
-		final DijkstraShortestPath<Router, Link> alg = new DijkstraShortestPath<>(this.model);
-		final List<Link> path = alg.getPath(this, message.getDestination());
-		if (path.isEmpty()) {
-			message.setMessageState(MessageState.UNROUTABLE);
-		} else {
-			final Link nextLink = path.get(0);
-			final Router nextRouter = this.model.getOpposite(this, nextLink);
-			routeMessage(nextRouter, nextLink, message);
+			// LOOK at our neighbors
+			final Collection<Link> links = this.model.getIncidentEdges(this);
+			for (final Link link : links) {
+				final Router router = model.getOpposite(this, link);
+				if (router == message.getDestination()) {
+					routeMessage(router, link, message);
+					return;
+				}
+			}
+
+			// COOL ROUTING ALGORITHM
+			final DijkstraShortestPath<Router, Link> alg = new DijkstraShortestPath<>(this.model);
+			final List<Link> path = alg.getPath(this, message.getDestination());
+			if (path.isEmpty()) {
+				message.setMessageState(MessageState.UNROUTABLE);
+			} else {
+				final Link nextLink = path.get(0);
+				final Router nextRouter = this.model.getOpposite(this, nextLink);
+				routeMessage(nextRouter, nextLink, message);
+			}
+		} catch (IllegalArgumentException | NullPointerException e) {
+			message.setMessageState(MessageState.DROPPED);
 		}
 	}
 
@@ -176,7 +180,7 @@ public class RouterImple implements Router, Runnable {
 					this.model.notifyModelChanged();
 					routeMessage(message);
 				}
-				Thread.sleep(500);
+				Thread.sleep(100);
 			}
 		} catch (final InterruptedException e) {
 			// empty for now ):
@@ -214,7 +218,7 @@ public class RouterImple implements Router, Runnable {
 
 	@Override
 	public String toString() {
-		return Integer.toString(id);
+		return "R" + id;
 	}
 
 }

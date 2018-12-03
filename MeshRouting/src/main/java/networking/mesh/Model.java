@@ -99,15 +99,15 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 	private final List<ModelListener> listeners;
 
 	private final MessageFactory messageFactory;
-
 	private final TreeMap<Integer, Message> messages;
-
 	private final RouterFactory routerFactory;
+	private volatile long sleepDuration;
 
 	public Model() {
 		this(new RouterFactoryImpl(), new LinkFactoryImpl(), new MessageFactoryImpl());
 		((RouterFactoryImpl) this.routerFactory).setModel(this);
 		((LinkFactoryImpl) this.linkFactory).setModel(this);
+		sleepDuration = 2000;
 	}
 
 	Model(final RouterFactory nodeFactory, final LinkFactory linkFactory, final MessageFactory messageFactory) {
@@ -177,6 +177,10 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 
 	public Factory<Router> getRouterFactory() {
 		return this.routerFactory;
+	}
+
+	public long getSleepDuration() {
+		return sleepDuration;
 	}
 
 	@Override
@@ -252,6 +256,10 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 	@Override
 	public void setMessageListener(final MessageListener listener) {
 		this.messageFactory.setMessageListener(listener);
+	}
+
+	public void setSleepDuration(final long sleepDuration) {
+		this.sleepDuration = sleepDuration;
 	}
 
 	@Override

@@ -61,13 +61,34 @@ public class ControlPanel extends JPanel {
 
 		ttl.addKeyListener(new LocalKeyListener());
 
-		final JPanel names = new JPanel(new GridLayout(1, 1));
-		final JLabel ttlLabel = new JLabel("TTL ");
-		ttlLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-		names.add(ttlLabel);
+		final JTextField duration = new JTextField(Integer.toString((int) model.getSleepDuration()), 10);
+		duration.addActionListener(l -> {
+			try {
+				final int newDuration = Integer.parseInt(duration.getText());
+				ttl.setForeground(Color.BLACK);
+				model.setSleepDuration(newDuration);
+			} catch (final NumberFormatException e) {
+				ttl.setForeground(Color.RED);
+			}
+		});
 
-		final JPanel values = new JPanel(new GridLayout(1, 1));
+		ttl.addKeyListener(new LocalKeyListener());
+
+		final JPanel names = new JPanel(new GridLayout(2, 1));
+		names.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+
+		final JLabel ttlLabel = new JLabel("TTL");
+		ttlLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+		final JLabel durationLabel = new JLabel("Sleep Duration (ms)");
+		durationLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+		names.add(ttlLabel);
+		names.add(durationLabel);
+
+		final JPanel values = new JPanel(new GridLayout(2, 1));
 		values.add(ttl);
+		values.add(duration);
 
 		final JPanel display = new JPanel(new BorderLayout());
 		display.add(names, BorderLayout.WEST);
