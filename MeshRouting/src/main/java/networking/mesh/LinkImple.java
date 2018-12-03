@@ -194,6 +194,11 @@ public class LinkImple implements Link, Runnable {
 	}
 
 	@Override
+	public boolean isRunning() {
+		return this.thread != null && this.thread.isAlive();
+	}
+
+	@Override
 	public void run() {
 		try {
 			while (true) {

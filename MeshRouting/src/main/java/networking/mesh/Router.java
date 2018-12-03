@@ -18,6 +18,8 @@ public interface Router extends Comparable<Router> {
 
 	Queue<Message> getQueue();
 
+	boolean isRunning();
+
 	void routeMessage(Message message);
 
 	void sendMessage(Router dest, int length);

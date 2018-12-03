@@ -118,6 +118,11 @@ public class RouterImple implements Router, Runnable {
 	}
 
 	@Override
+	public boolean isRunning() {
+		return this.thread != null && this.thread.isAlive();
+	}
+
+	@Override
 	public void routeMessage(final Message message) {
 
 		LOGGER.info("Router: " + getID() + " Routing message " + message.getID() + " " + message.getSource().getID()

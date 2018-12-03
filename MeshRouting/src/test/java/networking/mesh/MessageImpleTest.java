@@ -28,13 +28,19 @@ public class MessageImpleTest {
 		}
 
 		@Override
-		public void routeMessage(Message message) {
+		public boolean isRunning() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
+		public void routeMessage(final Message message) {
 			// TODO Auto-generated method stub
 
 		}
 
 		@Override
-		public void sendMessage(Router dest, int length) {
+		public void sendMessage(final Router dest, final int length) {
 			// TODO Auto-generated method stub
 
 		}

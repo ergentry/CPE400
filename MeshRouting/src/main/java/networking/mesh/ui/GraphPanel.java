@@ -65,19 +65,32 @@ public class GraphPanel extends JPanel {
 		this.vv.setBackground(Color.WHITE);
 
 		this.vv.getRenderContext().setEdgeDrawPaintTransformer(l -> {
+			if (!l.isRunning()) {
+				return Color.RED;
+			}
+
 			final boolean left = l.inUse(LinkDirection.Left_To_Right);
 			final boolean right = l.inUse(LinkDirection.Right_To_Left);
+
 			if (left && right) {
 				return PURPLE;
 			}
 			if (left) {
-				return Color.RED;
+				return Color.GREEN;
 			}
 			if (right) {
 				return Color.BLUE;
 			}
 			return Color.GRAY;
 		});
+
+		this.vv.getRenderContext().setVertexFillPaintTransformer(v -> {
+			if (v.isRunning()) {
+				return Color.GREEN;
+			}
+			return Color.RED;
+		});
+
 		this.vv.getRenderContext().setVertexLabelTransformer(MapTransformer.<Router, String>getInstance(
 				LazyMap.<Router, String>decorate(new HashMap<Router, String>(), new ToStringLabeller<Router>())));
 		this.vv.getRenderContext().setEdgeLabelTransformer(MapTransformer.<Link, String>getInstance(

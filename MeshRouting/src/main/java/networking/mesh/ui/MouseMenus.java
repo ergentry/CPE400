@@ -8,9 +8,6 @@
  */
 package networking.mesh.ui;
 
-import java.awt.geom.Point2D;
-
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -21,134 +18,97 @@ import networking.mesh.Router;
 import networking.mesh.ui.mouseplugin.DeleteEdgeMenuItem;
 import networking.mesh.ui.mouseplugin.DeleteVertexMenuItem;
 import networking.mesh.ui.mouseplugin.EdgeMenuListener;
-import networking.mesh.ui.mouseplugin.MenuPointListener;
 import networking.mesh.ui.mouseplugin.VertexMenuListener;
 
-public class MouseMenus
-{
+public class MouseMenus {
 
-	public static class CapacityDisplay extends JMenuItem implements EdgeMenuListener<Router, Link>
-	{
+	public static class CapacityDisplay extends JMenuItem implements EdgeMenuListener<Router, Link> {
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public void setEdgeAndView(final Link e, final VisualizationViewer<Router, Link> visComp)
-		{
+		public void setEdgeAndView(final Link e, final VisualizationViewer<Router, Link> visComp) {
 			this.setText("Capacity " + e + " = " + 500);
 		}
 	}
 
-	public static class EdgeMenu extends JPopupMenu
-	{
+	public static class EdgeMenu extends JPopupMenu {
 		private static final long serialVersionUID = 1L;
 
 		// private JFrame frame;
-		public EdgeMenu(final JFrame frame)
-		{
+		public EdgeMenu(final JFrame frame) {
 			super("Edge Menu");
 			// this.frame = frame;
 			this.add(new DeleteEdgeMenuItem<Router, Link>());
 			this.addSeparator();
-			this.add(new WeightDisplay());
-			this.add(new CapacityDisplay());
-			this.addSeparator();
-			this.add(new EdgePropItem(frame));
+			this.add(new StartStopLink());
 		}
 
 	}
 
-	public static class EdgePropItem extends JMenuItem implements EdgeMenuListener<Router, Link>, MenuPointListener
-	{
+	public static class StartStopLink extends JMenuItem implements EdgeMenuListener<Router, Link> {
+
 		private static final long serialVersionUID = 1L;
+		private volatile Link e;
 
-		Link edge;
-		Point2D point;
-		VisualizationViewer<Router, Link> visComp;
-
-		public EdgePropItem(final JFrame frame)
-		{
-			super("Edit Edge Properties...");
-			this.addActionListener(e ->
-			{
-				final EdgePropertyDialog dialog = new EdgePropertyDialog(frame, EdgePropItem.this.edge);
-				dialog.setLocation((int) EdgePropItem.this.point.getX() + frame.getX(), (int) EdgePropItem.this.point.getY() + frame.getY());
-				dialog.setVisible(true);
+		public StartStopLink() {
+			super("Stop");
+			this.addActionListener(l -> {
+				if (e.isRunning()) {
+					e.stop();
+				} else {
+					e.start();
+				}
 			});
 		}
 
 		@Override
-		public void setEdgeAndView(final Link edge, final VisualizationViewer<Router, Link> visComp)
-		{
-			this.edge = edge;
-			this.visComp = visComp;
-		}
+		public void setEdgeAndView(final Link e, final VisualizationViewer<Router, Link> visView) {
+			this.e = e;
+			this.setText(this.e.isRunning() ? "Stop" : "Start");
 
-		@Override
-		public void setPoint(final Point2D point)
-		{
-			this.point = point;
 		}
 
 	}
 
-	public static class pscCheckBox extends JCheckBoxMenuItem implements VertexMenuListener<Router, Link>
-	{
+	public static class StartStopRouter extends JMenuItem implements VertexMenuListener<Router, Link> {
 		private static final long serialVersionUID = 1L;
 
-		Router v;
+		private volatile Router v;
 
-		public pscCheckBox()
-		{
-			super("PSC Capable");
+		public StartStopRouter() {
+			super("Stop");
+			this.addActionListener(l -> {
+				if (this.v.isRunning()) {
+					v.stop();
+				} else {
+					v.start();
+				}
+			});
 		}
 
 		@Override
-		public void setVertexAndView(final Router v, final VisualizationViewer<Router, Link> visComp)
-		{
+		public void setVertexAndView(final Router v, final VisualizationViewer<Router, Link> visComp) {
 			this.v = v;
-		}
-
-	}
-
-	public static class tdmCheckBox extends JCheckBoxMenuItem implements VertexMenuListener<Router, Link>
-	{
-		private static final long serialVersionUID = 1L;
-
-		Router v;
-
-		public tdmCheckBox()
-		{
-			super("TDM Capable");
-		}
-
-		@Override
-		public void setVertexAndView(final Router v, final VisualizationViewer<Router, Link> visComp)
-		{
-			this.v = v;
+			this.setText(this.v.isRunning() ? "Stop" : "Start");
 		}
 	}
 
-	public static class VertexMenu extends JPopupMenu
-	{
+	public static class VertexMenu extends JPopupMenu {
 		private static final long serialVersionUID = 1L;
 
-		public VertexMenu()
-		{
+		public VertexMenu() {
 			super("Vertex Menu");
 			this.add(new DeleteVertexMenuItem<Router, Link>());
 			this.addSeparator();
-			this.add(new pscCheckBox());
-			this.add(new tdmCheckBox());
+			this.add(new StartStopRouter());
 		}
 	}
 
-	public static class WeightDisplay extends JMenuItem implements EdgeMenuListener<Router, Link>
-	{
+	public static class WeightDisplay extends JMenuItem implements EdgeMenuListener<Router, Link> {
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public void setEdgeAndView(final Link e, final VisualizationViewer<Router, Link> visComp)
-		{
+		public void setEdgeAndView(final Link e, final VisualizationViewer<Router, Link> visComp) {
 			this.setText("Weight " + e + " = " + 500);
 		}
 	}
