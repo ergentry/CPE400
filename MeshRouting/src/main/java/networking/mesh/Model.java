@@ -20,7 +20,7 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 		public Link create() {
 			final Link link = LinkImple.newInstance().setModel(this.model)
 					.setId(LinkFactoryImpl.nextSerialNumber.incrementAndGet()).build();
-			// link.start();
+			link.start();
 			return link;
 		}
 
@@ -76,7 +76,7 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 		public Router create() {
 			final Router node = RouterImple.newInstance().setModel(this.model)
 					.setId(RouterFactoryImpl.nextSerialNumber.getAndIncrement()).build();
-			// node.start();
+			node.start();
 			return node;
 		}
 
@@ -93,16 +93,16 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 
 	private final TreeMap<Integer, Message> messages;
 
-	private final RouterFactory nodeFactory;
+	private final RouterFactory routerFactory;
 
 	public Model() {
 		this(new RouterFactoryImpl(), new LinkFactoryImpl(), new MessageFactoryImpl());
-		((RouterFactoryImpl) this.nodeFactory).setModel(this);
+		((RouterFactoryImpl) this.routerFactory).setModel(this);
 		((LinkFactoryImpl) this.linkFactory).setModel(this);
 	}
 
 	Model(final RouterFactory nodeFactory, final LinkFactory linkFactory, final MessageFactory messageFactory) {
-		this.nodeFactory = nodeFactory;
+		this.routerFactory = nodeFactory;
 		this.linkFactory = linkFactory;
 		this.messageFactory = messageFactory;
 		this.messages = new TreeMap<>();
@@ -153,7 +153,7 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 	}
 
 	public synchronized Router createNode() {
-		final Router node = this.nodeFactory.create();
+		final Router node = this.routerFactory.create();
 		this.addVertex(node);
 		return node;
 	}
@@ -166,8 +166,8 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 		return new ArrayList<>(this.messages.values());
 	}
 
-	public Factory<Router> getNodeFactory() {
-		return this.nodeFactory;
+	public Factory<Router> getRouterFactory() {
+		return this.routerFactory;
 	}
 
 	@Override

@@ -23,10 +23,15 @@ public interface Link extends Comparable<Link> {
 	 */
 	boolean inUse(LinkDirection direction);
 
+	void sendMessage(LinkDirection direction, Message message);
+
 	void setLeftRouter(Router left);
 
 	void setRightRouter(Router right);
 
-	boolean transmitMessage(LinkDirection direction, Message message);
+	void start();
 
+	void stop();
+
+	boolean transmitMessage(LinkDirection direction, Message message);
 }

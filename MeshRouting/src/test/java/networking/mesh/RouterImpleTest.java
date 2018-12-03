@@ -20,8 +20,8 @@ public class RouterImpleTest {
 
 	@Test
 	public void testRouteMessage() {
-		final Router left = model.getNodeFactory().create();
-		final Router right = model.getNodeFactory().create();
+		final Router left = model.getRouterFactory().create();
+		final Router right = model.getRouterFactory().create();
 		final Link link = model.getLinkFactory().create();
 		model.addEdge(link, left, right);
 		final Message message = model.newDataMessage(left, right, 2000);

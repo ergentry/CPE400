@@ -11,7 +11,7 @@ import java.util.concurrent.ArrayBlockingQueue;
  * @author emily
  *
  */
-public class RouterImple implements Router {
+public class RouterImple implements Router, Runnable {
 
 	public static class Builder {
 		private int id;
@@ -53,6 +53,8 @@ public class RouterImple implements Router {
 	private final Queue<Message> messageQueue;
 
 	private final Model model;
+
+	private volatile Thread thread;
 
 	RouterImple(final Builder builder) {
 		this.id = builder.getId();
@@ -135,10 +137,47 @@ public class RouterImple implements Router {
 	}
 
 	@Override
+	public void run() {
+		try {
+			while (true) {
+				final Message message = messageQueue.peek();
+				if (message != null) {
+					messageQueue.poll();
+					routeMessage(message);
+				}
+				Thread.sleep(500);
+			}
+		} catch (final InterruptedException e) {
+			// empty for now ):
+		}
+
+	}
+
+	@Override
 	public void sendMessage(Router dest, int length) {
 		final Message message = model.newDataMessage(this, dest, length);
 		message.setMessageState(MessageState.ENQUEUED);
 		messageQueue.add(message);
+
+	}
+
+	@Override
+	public void start() {
+		if (thread != null && thread.isAlive()) {
+			stop();
+		}
+
+		thread = new Thread(this);
+		thread.start();
+
+	}
+
+	@Override
+	public void stop() {
+		if (thread != null) {
+			thread.interrupt();
+			thread = null;
+		}
 
 	}
 

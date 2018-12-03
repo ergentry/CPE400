@@ -3,12 +3,16 @@
  */
 package networking.mesh;
 
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+
+import edu.uci.ics.jung.graph.util.Pair;
+
 /**
  * @author emily
  *
  */
-public class LinkImple implements Link {
-
+public class LinkImple implements Link, Runnable {
 	public static class Builder {
 		private int id;
 
@@ -63,9 +67,37 @@ public class LinkImple implements Link {
 		}
 	}
 
+	private class LinkAction implements Runnable {
+
+		Link link;
+		LinkDirection direction;
+		Message message;
+
+		LinkAction(Link link, LinkDirection direction, Message message) {
+			this.link = link;
+			this.direction = direction;
+			this.message = message;
+		}
+
+		@Override
+		public void run() {
+			try {
+				final int time = message.getLength() / 500;
+				Thread.sleep(time);
+				link.sendMessage(direction, message);
+			} catch (final InterruptedException e) {
+				// empty, oh so empty
+			}
+
+		}
+
+	}
+
 	public static Builder newInstance() {
 		return new Builder();
 	}
+
+	private volatile Thread thread;
 
 	private volatile Router leftRouter;
 
@@ -79,11 +111,14 @@ public class LinkImple implements Link {
 
 	private volatile Message rightToLeft;
 
+	private final Queue<LinkAction> actionQueue;
+
 	LinkImple(final Builder builder) {
 		this.id = builder.getId();
 		this.model = builder.getModel();
 		this.leftRouter = builder.getLeftRouter();
 		this.rightRouter = builder.getRightRouter();
+		this.actionQueue = new ArrayBlockingQueue<LinkAction>(100);
 	}
 
 	@Override
@@ -158,6 +193,39 @@ public class LinkImple implements Link {
 	}
 
 	@Override
+	public void run() {
+		try {
+			while (true) {
+				final LinkAction action = actionQueue.peek();
+				if (action != null) {
+					actionQueue.poll();
+					new Thread(action).start();
+				}
+				Thread.sleep(500);
+			}
+		} catch (final InterruptedException e) {
+			// crying because empty
+		}
+
+	}
+
+	@Override
+	public void sendMessage(LinkDirection direction, Message message) {
+		final Pair<Router> routers = this.model.getEndpoints(this);
+		final Router left = routers.getFirst().getID() < routers.getSecond().getID() ? routers.getFirst()
+				: routers.getSecond();
+		final Router right = routers.getFirst().getID() > routers.getSecond().getID() ? routers.getFirst()
+				: routers.getSecond();
+		if (direction == LinkDirection.Left_To_Right) {
+			right.routeMessage(message);
+			leftToRight = null;
+		} else {
+			left.routeMessage(message);
+			rightToLeft = null;
+		}
+	}
+
+	@Override
 	public void setLeftRouter(Router left) {
 		this.leftRouter = left;
 	}
@@ -165,6 +233,25 @@ public class LinkImple implements Link {
 	@Override
 	public void setRightRouter(Router right) {
 		this.rightRouter = right;
+	}
+
+	@Override
+	public void start() {
+		if (thread != null && thread.isAlive()) {
+			stop();
+		}
+		thread = new Thread(this);
+		thread.start();
+
+	}
+
+	@Override
+	public void stop() {
+		if (thread != null) {
+			thread.interrupt();
+			thread = null;
+		}
+
 	}
 
 	@Override
@@ -183,7 +270,7 @@ public class LinkImple implements Link {
 		} else {
 			rightToLeft = message;
 		}
-		// signal delay
+		this.actionQueue.add(new LinkAction(this, direction, message));
 		return true;
 	}
 

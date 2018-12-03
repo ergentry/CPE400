@@ -81,7 +81,7 @@ public class GraphPanel extends JPanel
 		this.setBackground(java.awt.Color.lightGray);
 		this.setFont(new Font("Serif", Font.PLAIN, 12));
 
-		this.graphMouse = new EditingModalGraphMouse<>(this.vv.getRenderContext(), model.getNodeFactory(), model.getLinkFactory());
+		this.graphMouse = new EditingModalGraphMouse<>(this.vv.getRenderContext(), model.getRouterFactory(), model.getLinkFactory());
 		this.vv.setGraphMouse(this.graphMouse);
 		this.graphMouse.setMode(ModalGraphMouse.Mode.EDITING);
 
