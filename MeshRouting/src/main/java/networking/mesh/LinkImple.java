@@ -3,8 +3,12 @@
  */
 package networking.mesh;
 
-import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import edu.uci.ics.jung.graph.util.Pair;
 
@@ -13,6 +17,7 @@ import edu.uci.ics.jung.graph.util.Pair;
  *
  */
 public class LinkImple implements Link, Runnable {
+
 	public static class Builder {
 		private int id;
 
@@ -51,7 +56,7 @@ public class LinkImple implements Link, Runnable {
 			return this;
 		}
 
-		public Builder setLeftRouter(Router left) {
+		public Builder setLeftRouter(final Router left) {
 			this.leftRouter = left;
 			return this;
 		}
@@ -61,7 +66,7 @@ public class LinkImple implements Link, Runnable {
 			return this;
 		}
 
-		public Builder setRightRouter(Router right) {
+		public Builder setRightRouter(final Router right) {
 			this.rightRouter = right;
 			return this;
 		}
@@ -73,7 +78,7 @@ public class LinkImple implements Link, Runnable {
 		LinkDirection direction;
 		Message message;
 
-		LinkAction(Link link, LinkDirection direction, Message message) {
+		LinkAction(final Link link, final LinkDirection direction, final Message message) {
 			this.link = link;
 			this.direction = direction;
 			this.message = message;
@@ -82,7 +87,8 @@ public class LinkImple implements Link, Runnable {
 		@Override
 		public void run() {
 			try {
-				final int time = message.getLength() / 500;
+				final int time = message.getLength();
+				LOGGER.info("Sleep " + time);
 				Thread.sleep(time);
 				link.sendMessage(direction, message);
 			} catch (final InterruptedException e) {
@@ -93,25 +99,20 @@ public class LinkImple implements Link, Runnable {
 
 	}
 
+	static final Logger LOGGER = LogManager.getLogger(LinkImple.class.getName());
+
 	public static Builder newInstance() {
 		return new Builder();
 	}
 
 	private volatile Thread thread;
-
 	private volatile Router leftRouter;
-
 	private volatile Router rightRouter;
-
 	private final int id;
-
 	private final Model model;
-
 	private volatile Message leftToRight;
-
 	private volatile Message rightToLeft;
-
-	private final Queue<LinkAction> actionQueue;
+	private final BlockingQueue<LinkAction> actionQueue;
 
 	LinkImple(final Builder builder) {
 		this.id = builder.getId();
@@ -127,7 +128,7 @@ public class LinkImple implements Link, Runnable {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -162,7 +163,7 @@ public class LinkImple implements Link, Runnable {
 	}
 
 	@Override
-	public Message getMessage(LinkDirection direction) {
+	public Message getMessage(final LinkDirection direction) {
 
 		return direction == LinkDirection.Left_To_Right ? leftToRight : rightToLeft;
 	}
@@ -188,7 +189,7 @@ public class LinkImple implements Link, Runnable {
 	}
 
 	@Override
-	public synchronized boolean inUse(LinkDirection direction) {
+	public synchronized boolean inUse(final LinkDirection direction) {
 		return direction == LinkDirection.Left_To_Right ? leftToRight != null : rightToLeft != null;
 	}
 
@@ -196,12 +197,12 @@ public class LinkImple implements Link, Runnable {
 	public void run() {
 		try {
 			while (true) {
-				final LinkAction action = actionQueue.peek();
+				LOGGER.debug("Running waiting for action");
+				final LinkAction action = actionQueue.poll(500, TimeUnit.MILLISECONDS);
 				if (action != null) {
-					actionQueue.poll();
+					LOGGER.info("Executing action...");
 					new Thread(action).start();
 				}
-				Thread.sleep(500);
 			}
 		} catch (final InterruptedException e) {
 			// crying because empty
@@ -210,28 +211,32 @@ public class LinkImple implements Link, Runnable {
 	}
 
 	@Override
-	public void sendMessage(LinkDirection direction, Message message) {
+	public void sendMessage(final LinkDirection direction, final Message message) {
+		LOGGER.info("Sending message on its way " + direction + " " + message.getDestination().getID());
 		final Pair<Router> routers = this.model.getEndpoints(this);
 		final Router left = routers.getFirst().getID() < routers.getSecond().getID() ? routers.getFirst()
 				: routers.getSecond();
 		final Router right = routers.getFirst().getID() > routers.getSecond().getID() ? routers.getFirst()
 				: routers.getSecond();
 		if (direction == LinkDirection.Left_To_Right) {
+			LOGGER.info("Routing to " + right.getID());
 			right.routeMessage(message);
 			leftToRight = null;
 		} else {
+			LOGGER.info("Routing to " + left.getID());
 			left.routeMessage(message);
 			rightToLeft = null;
 		}
+		this.model.notifyModelChanged();
 	}
 
 	@Override
-	public void setLeftRouter(Router left) {
+	public void setLeftRouter(final Router left) {
 		this.leftRouter = left;
 	}
 
 	@Override
-	public void setRightRouter(Router right) {
+	public void setRightRouter(final Router right) {
 		this.rightRouter = right;
 	}
 
@@ -260,7 +265,7 @@ public class LinkImple implements Link, Runnable {
 	}
 
 	@Override
-	public boolean transmitMessage(LinkDirection direction, Message message) {
+	public boolean transmitMessage(final LinkDirection direction, final Message message) {
 
 		if (inUse(direction)) {
 			return false;
@@ -271,6 +276,8 @@ public class LinkImple implements Link, Runnable {
 			rightToLeft = message;
 		}
 		this.actionQueue.add(new LinkAction(this, direction, message));
+		this.model.notifyModelChanged();
+
 		return true;
 	}
 

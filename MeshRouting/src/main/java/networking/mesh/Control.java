@@ -1,55 +1,53 @@
 package networking.mesh;
 
+import java.security.SecureRandom;
 import java.util.ConcurrentModificationException;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class Control implements Runnable
-{
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-	private final static Logger LOGGER = Logger.getLogger(Control.class.getName());
+public class Control implements Runnable {
+
+	private final static Logger LOGGER = LogManager.getLogger(Control.class.getName());
 	private final Model model;
+	private final SecureRandom random;
 
-	public Control(final Model model)
-	{
+	public Control(final Model model) {
 		this.model = model;
+		this.random = new SecureRandom();
 	}
 
 	@Override
-	public void run()
-	{
+	public void run() {
 		boolean running = true;
-		try
-		{
-			while (running)
-			{
-				try
-				{
+		try {
+			while (running) {
+				try {
 					final List<Router> routers = this.model.getVertices().stream().collect(Collectors.toList());
-					if (routers.size() > 2)
-					{
-						final int sourceIndex = (int) (Math.random() * routers.size());
-						final int destinationIndex = (int) (Math.random() * routers.size());
+					if (routers.size() > 1) {
+						final int sourceIndex = random.nextInt(routers.size());
 						final Router source = routers.get(sourceIndex);
-						final Router destination = routers.get(destinationIndex);
+						Router destination = source;
+						while (destination.equals(source)) {
+							final int destinationIndex = random.nextInt(routers.size());
+							destination = routers.get(destinationIndex);
+						}
 						this.sendMessage(source, destination);
 					}
-				} catch (final ConcurrentModificationException e)
-				{
+				} catch (final ConcurrentModificationException e) {
 					// ignore
 				}
-				Thread.sleep(10 * 1000);
+				Thread.sleep(2000);
 			}
-		} catch (final InterruptedException e)
-		{
+		} catch (final InterruptedException e) {
 			running = false;
 		}
 	}
 
-	private void sendMessage(final Router source, final Router destination)
-	{
-		Control.LOGGER.info("Sending message from " + source + " to " + destination + ".");
+	private void sendMessage(final Router source, final Router destination) {
+		Control.LOGGER.debug("Sending message from " + source + " to " + destination + ".");
 		source.sendMessage(destination, 1000);
 	}
 

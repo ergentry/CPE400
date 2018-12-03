@@ -34,6 +34,15 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 		private volatile MessageListener messageListener;
 		private volatile int timeToLive;
 
+		MessageFactoryImpl() {
+			this.timeToLive = 16;
+		}
+
+		@Override
+		public int getTimeToLive() {
+			return this.timeToLive;
+		}
+
 		@Override
 		public Message newControlMessage(final Router source, final Router destination) {
 			final int id = MessageFactoryImpl.nextSerialNumber.getAndIncrement();
@@ -168,6 +177,11 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 
 	public Factory<Router> getRouterFactory() {
 		return this.routerFactory;
+	}
+
+	@Override
+	public int getTimeToLive() {
+		return this.messageFactory.getTimeToLive();
 	}
 
 	@Override

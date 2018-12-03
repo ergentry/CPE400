@@ -6,6 +6,11 @@ package networking.mesh;
 import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @author emily
@@ -44,13 +49,15 @@ public class RouterImple implements Router, Runnable {
 		}
 	}
 
+	static final Logger LOGGER = LogManager.getLogger(RouterImple.class.getName());
+
 	public static Builder newInstance() {
 		return new Builder();
 	}
 
 	private final int id;
 
-	private final Queue<Message> messageQueue;
+	private final BlockingQueue<Message> messageQueue;
 
 	private final Model model;
 
@@ -68,7 +75,7 @@ public class RouterImple implements Router, Runnable {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -108,10 +115,16 @@ public class RouterImple implements Router, Runnable {
 	}
 
 	@Override
-	public void routeMessage(Message message) {
+	public void routeMessage(final Message message) {
+
+		LOGGER.info("Router: " + getID() + " Routing message " + message.getID() + " " + message.getSource().getID()
+				+ " -> " + message.getDestination().getID());
+
 		if (message.getDestination() == this) {
 			message.setMessageState(MessageState.RECEIVED);
+			return;
 		}
+
 		final Collection<Link> links = this.model.getIncidentEdges(this);
 		for (final Link link : links) {
 			final Collection<Router> routers = model.getIncidentVertices(link);
@@ -122,6 +135,7 @@ public class RouterImple implements Router, Runnable {
 					if (link.inUse(direction)) {
 						message.setMessageState(MessageState.ENQUEUED);
 						messageQueue.add(message);
+						this.model.notifyModelChanged();
 						return;
 					} else {
 						message.setMessageState(MessageState.IN_TRANSIT);
@@ -140,9 +154,11 @@ public class RouterImple implements Router, Runnable {
 	public void run() {
 		try {
 			while (true) {
-				final Message message = messageQueue.peek();
+
+				final Message message = messageQueue.poll(500, TimeUnit.MILLISECONDS);
 				if (message != null) {
-					messageQueue.poll();
+					LOGGER.debug("Received message " + message.getID() + ".");
+					this.model.notifyModelChanged();
 					routeMessage(message);
 				}
 				Thread.sleep(500);
@@ -154,11 +170,11 @@ public class RouterImple implements Router, Runnable {
 	}
 
 	@Override
-	public void sendMessage(Router dest, int length) {
+	public void sendMessage(final Router dest, final int length) {
 		final Message message = model.newDataMessage(this, dest, length);
 		message.setMessageState(MessageState.ENQUEUED);
 		messageQueue.add(message);
-
+		this.model.notifyModelChanged();
 	}
 
 	@Override

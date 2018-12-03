@@ -1,7 +1,8 @@
 package networking.mesh;
 
-public interface MessageFactory
-{
+public interface MessageFactory {
+	int getTimeToLive();
+
 	Message newControlMessage(Router source, Router destination);
 
 	Message newDataMessage(Router source, Router destination, int size);
