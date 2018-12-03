@@ -4,6 +4,7 @@
 package networking.mesh;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -11,6 +12,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import edu.uci.ics.jung.algorithms.shortestpath.DijkstraShortestPath;
 
 /**
  * @author emily
@@ -125,29 +128,41 @@ public class RouterImple implements Router, Runnable {
 			return;
 		}
 
+		// LOOK at our neighbors
 		final Collection<Link> links = this.model.getIncidentEdges(this);
 		for (final Link link : links) {
-			final Collection<Router> routers = model.getIncidentVertices(link);
-			for (final Router router : routers) {
-				if (router == message.getDestination()) {
-					final LinkDirection direction = this.id < router.getID() ? LinkDirection.Left_To_Right
-							: LinkDirection.Right_To_Left;
-					if (link.inUse(direction)) {
-						message.setMessageState(MessageState.ENQUEUED);
-						messageQueue.add(message);
-						this.model.notifyModelChanged();
-						return;
-					} else {
-						message.setMessageState(MessageState.IN_TRANSIT);
-						link.transmitMessage(direction, message);
-						return;
-					}
-				}
+			final Router router = model.getOpposite(this, link);
+			if (router == message.getDestination()) {
+				routeMessage(router, link, message);
+				return;
 			}
 		}
 
-		// COOL ROUTING ALGORITHM HERE
-		message.setMessageState(MessageState.UNROUTABLE);
+		// COOL ROUTING ALGORITHM
+		final DijkstraShortestPath<Router, Link> alg = new DijkstraShortestPath<>(this.model);
+		final List<Link> path = alg.getPath(this, message.getDestination());
+		if (path.isEmpty()) {
+			message.setMessageState(MessageState.UNROUTABLE);
+		} else {
+			final Link nextLink = path.get(0);
+			final Router nextRouter = this.model.getOpposite(this, nextLink);
+			routeMessage(nextRouter, nextLink, message);
+		}
+	}
+
+	void routeMessage(final Router nextRouter, final Link nextLink, final Message message) {
+		final LinkDirection direction = this.id < nextRouter.getID() ? LinkDirection.Left_To_Right
+				: LinkDirection.Right_To_Left;
+		if (nextLink.inUse(direction)) {
+			message.setMessageState(MessageState.ENQUEUED);
+			messageQueue.add(message);
+			this.model.notifyModelChanged();
+			return;
+		} else {
+			message.setMessageState(MessageState.IN_TRANSIT);
+			nextLink.transmitMessage(direction, message);
+			return;
+		}
 	}
 
 	@Override

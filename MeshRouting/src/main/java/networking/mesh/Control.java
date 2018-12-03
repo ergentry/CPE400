@@ -39,7 +39,7 @@ public class Control implements Runnable {
 				} catch (final ConcurrentModificationException e) {
 					// ignore
 				}
-				Thread.sleep(2000);
+				Thread.sleep(5000);
 			}
 		} catch (final InterruptedException e) {
 			running = false;

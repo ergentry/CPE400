@@ -11,7 +11,7 @@ import edu.uci.ics.jung.graph.UndirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.util.EdgeType;
 import edu.uci.ics.jung.graph.util.Pair;
 
-public class Model extends UndirectedSparseMultigraph<Router, Link> implements MessageFactory {
+public class Model extends UndirectedSparseMultigraph<Router, Link> implements MessageFactory, MessageListener {
 	static class LinkFactoryImpl implements LinkFactory {
 		private static AtomicInteger nextSerialNumber = new AtomicInteger(0);
 		private Model model;
@@ -185,9 +185,19 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 	}
 
 	@Override
+	public void messageStateChanged(final Message message) {
+		System.out.println("Message " + message.getID() + " " + message.getSource() + "->" + message.getDestination()
+				+ " (TTL=" + message.getTTL() + ", State=" + message.getMessageState().name() + ")");
+		if (message.getMessageState().isTerminal()) {
+			new Thread(() -> message.removeMessageListener(this)).start();
+		}
+	}
+
+	@Override
 	public synchronized Message newControlMessage(final Router source, final Router destination) {
 		this.pruneMessages();
 		final Message message = this.messageFactory.newControlMessage(source, destination);
+		message.addMessageListener(this);
 		this.messages.put(message.getID(), message);
 		return message;
 	}
@@ -196,6 +206,7 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 	public synchronized Message newDataMessage(final Router source, final Router destination, final int size) {
 		this.pruneMessages();
 		final Message message = this.messageFactory.newDataMessage(source, destination, size);
+		message.addMessageListener(this);
 		this.messages.put(message.getID(), message);
 		this.notifyModelChanged();
 		return message;

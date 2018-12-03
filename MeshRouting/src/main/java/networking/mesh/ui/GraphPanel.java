@@ -76,7 +76,7 @@ public class GraphPanel extends JPanel {
 			if (right) {
 				return Color.BLUE;
 			}
-			return Color.BLACK;
+			return Color.GRAY;
 		});
 		this.vv.getRenderContext().setVertexLabelTransformer(MapTransformer.<Router, String>getInstance(
 				LazyMap.<Router, String>decorate(new HashMap<Router, String>(), new ToStringLabeller<Router>())));
