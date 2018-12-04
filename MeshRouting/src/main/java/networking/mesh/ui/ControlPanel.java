@@ -63,42 +63,60 @@ public class ControlPanel extends JPanel {
 
 		ttl.addKeyListener(new LocalKeyListener());
 
+		final JTextField messageSize = new JTextField(Integer.toString(control.getMessageSize()), 10);
+		messageSize.addActionListener(l -> {
+			try {
+				final int newSize = Integer.parseInt(messageSize.getText());
+				messageSize.setForeground(Color.BLACK);
+				control.setMessageSize(newSize);
+			} catch (final NumberFormatException e) {
+				messageSize.setForeground(Color.RED);
+			}
+		});
+
+		messageSize.addKeyListener(new LocalKeyListener());
+
 		final JTextField duration = new JTextField(Integer.toString((int) model.getSleepDuration()), 10);
 		duration.addActionListener(l -> {
 			try {
 				final int newDuration = Integer.parseInt(duration.getText());
-				ttl.setForeground(Color.BLACK);
+				duration.setForeground(Color.BLACK);
 				model.setSleepDuration(newDuration);
 			} catch (final NumberFormatException e) {
-				ttl.setForeground(Color.RED);
+				duration.setForeground(Color.RED);
 			}
 		});
 
 		duration.addKeyListener(new LocalKeyListener());
-
-		final JLabel pauseLabel = new JLabel("Simulation");
-		pauseLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
 		final JCheckBox pause = new JCheckBox("Pause");
 		pause.addActionListener(l -> {
 			control.setPaused(!control.isPaused());
 		});
 
-		final JPanel names = new JPanel(new GridLayout(3, 1));
+		final JPanel names = new JPanel(new GridLayout(4, 1));
 		names.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
 
 		final JLabel ttlLabel = new JLabel("TTL");
 		ttlLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
+		final JLabel messageSizeLabel = new JLabel("Message Size");
+		messageSizeLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
 		final JLabel durationLabel = new JLabel("Sleep Duration (ms)");
 		durationLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
+		final JLabel pauseLabel = new JLabel("Simulation");
+		pauseLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
 		names.add(ttlLabel);
+		names.add(messageSizeLabel);
 		names.add(durationLabel);
 		names.add(pauseLabel);
 
-		final JPanel values = new JPanel(new GridLayout(3, 1));
+		final JPanel values = new JPanel(new GridLayout(4, 1));
 		values.add(ttl);
+		values.add(messageSize);
 		values.add(duration);
 		values.add(pause);
 
