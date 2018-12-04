@@ -222,25 +222,33 @@ public class LinkImple implements Link, Runnable {
 			final Pair<Router> routers = this.model.getEndpoints(this);
 
 			if (routers == null || routers.getFirst() == null || routers.getSecond() == null) {
-				message.setMessageState(MessageState.DROPPED);
+				stop();
 			}
 
 			final Router left = routers.getFirst().getID() < routers.getSecond().getID() ? routers.getFirst()
 					: routers.getSecond();
 			final Router right = routers.getFirst().getID() > routers.getSecond().getID() ? routers.getFirst()
 					: routers.getSecond();
+			boolean result = false;
+
 			if (direction == LinkDirection.Left_To_Right) {
 				LOGGER.info("Routing to " + right.getID());
-				right.routeMessage(message);
+				result = right.routeMessage(message);
 				leftToRight = null;
 			} else {
 				LOGGER.info("Routing to " + left.getID());
-				left.routeMessage(message);
+				result = left.routeMessage(message);
 				rightToLeft = null;
 			}
+
 			this.model.notifyModelChanged();
+
+			if (!result) {
+				stop();
+			}
+
 		} catch (final NullPointerException e) {
-			message.setMessageState(MessageState.DROPPED);
+			stop();
 		}
 	}
 
@@ -266,9 +274,31 @@ public class LinkImple implements Link, Runnable {
 
 	@Override
 	public void stop() {
+		if (!isRunning()) {
+			return;
+		}
+
 		if (thread != null) {
 			thread.interrupt();
 			thread = null;
+		}
+
+		if (this.leftToRight != null) {
+			leftToRight.setMessageState(MessageState.DROPPED);
+			leftToRight = null;
+		}
+
+		if (this.rightToLeft != null) {
+			rightToLeft.setMessageState(MessageState.DROPPED);
+			rightToLeft = null;
+		}
+
+		if (leftRouter != null) {
+			leftRouter.linkFailure(this);
+		}
+
+		if (rightRouter != null) {
+			rightRouter.linkFailure(this);
 		}
 
 	}
@@ -281,9 +311,10 @@ public class LinkImple implements Link, Runnable {
 	@Override
 	public boolean transmitMessage(final LinkDirection direction, final Message message) {
 
-		if (inUse(direction)) {
+		if (inUse(direction) || !isRunning()) {
 			return false;
 		}
+
 		if (direction == LinkDirection.Left_To_Right) {
 			leftToRight = message;
 		} else {

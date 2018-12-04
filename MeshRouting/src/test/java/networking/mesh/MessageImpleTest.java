@@ -16,6 +16,12 @@ public class MessageImpleTest {
 		}
 
 		@Override
+		public void electLeader() {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
 		public int getID() {
 			// TODO Auto-generated method stub
 			return 0;
@@ -28,21 +34,33 @@ public class MessageImpleTest {
 		}
 
 		@Override
+		public boolean isLeader() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+		@Override
 		public boolean isRunning() {
 			// TODO Auto-generated method stub
 			return false;
 		}
 
 		@Override
-		public void routeMessage(final Message message) {
+		public void linkFailure(final Link link) {
 			// TODO Auto-generated method stub
 
 		}
 
 		@Override
-		public void sendMessage(final Router dest, final int length) {
+		public boolean routeMessage(final Message message) {
 			// TODO Auto-generated method stub
+			return false;
+		}
 
+		@Override
+		public boolean sendMessage(final Router dest, final int length) {
+			// TODO Auto-generated method stub
+			return false;
 		}
 
 		@Override

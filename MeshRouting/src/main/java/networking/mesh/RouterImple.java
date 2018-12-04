@@ -59,22 +59,27 @@ public class RouterImple implements Router, Runnable {
 	}
 
 	private final int id;
-
 	private final BlockingQueue<Message> messageQueue;
-
 	private final Model model;
-
 	private volatile Thread thread;
+	private volatile boolean leader;
 
 	RouterImple(final Builder builder) {
 		this.id = builder.getId();
 		this.messageQueue = new ArrayBlockingQueue<Message>(100);
 		this.model = builder.getModel();
+		this.leader = false;
 	}
 
 	@Override
 	public int compareTo(final Router o) {
 		return Integer.compare(this.id, o.getID());
+	}
+
+	@Override
+	public void electLeader() {
+		// TODO Auto-generated method stub
+
 	}
 
 	@Override
@@ -118,12 +123,28 @@ public class RouterImple implements Router, Runnable {
 	}
 
 	@Override
+	public boolean isLeader() {
+		return this.leader;
+	}
+
+	@Override
 	public boolean isRunning() {
 		return this.thread != null && this.thread.isAlive();
 	}
 
 	@Override
-	public void routeMessage(final Message message) {
+	public void linkFailure(final Link link) {
+		// update data model
+		electLeader();
+	}
+
+	@Override
+	public boolean routeMessage(final Message message) {
+
+		if (!isRunning()) {
+			message.setMessageState(MessageState.DROPPED);
+			return false;
+		}
 
 		LOGGER.info("Router: " + getID() + " Routing message " + message.getID() + " " + message.getSource().getID()
 				+ " -> " + message.getDestination().getID());
@@ -131,7 +152,7 @@ public class RouterImple implements Router, Runnable {
 		try {
 			if (message.getDestination() == this) {
 				message.setMessageState(MessageState.RECEIVED);
-				return;
+				return true;
 			}
 
 			// LOOK at our neighbors
@@ -139,8 +160,7 @@ public class RouterImple implements Router, Runnable {
 			for (final Link link : links) {
 				final Router router = model.getOpposite(this, link);
 				if (router == message.getDestination()) {
-					routeMessage(router, link, message);
-					return;
+					return routeMessage(router, link, message);
 				}
 			}
 
@@ -149,29 +169,35 @@ public class RouterImple implements Router, Runnable {
 			final List<Link> path = alg.getPath(this, message.getDestination());
 			if (path.isEmpty()) {
 				message.setMessageState(MessageState.UNROUTABLE);
+				return false;
 			} else {
 				final Link nextLink = path.get(0);
 				final Router nextRouter = this.model.getOpposite(this, nextLink);
-				routeMessage(nextRouter, nextLink, message);
+				return routeMessage(nextRouter, nextLink, message);
 			}
 		} catch (IllegalArgumentException | NullPointerException e) {
 			message.setMessageState(MessageState.DROPPED);
 		}
+		return true;
 	}
 
-	void routeMessage(final Router nextRouter, final Link nextLink, final Message message) {
+	boolean routeMessage(final Router nextRouter, final Link nextLink, final Message message) {
 		final LinkDirection direction = this.id < nextRouter.getID() ? LinkDirection.Left_To_Right
 				: LinkDirection.Right_To_Left;
 		if (nextLink.inUse(direction)) {
 			message.setMessageState(MessageState.ENQUEUED);
 			messageQueue.add(message);
 			this.model.notifyModelChanged();
-			return;
-		} else {
-			message.setMessageState(MessageState.IN_TRANSIT);
-			nextLink.transmitMessage(direction, message);
-			return;
+			return true;
 		}
+
+		message.setMessageState(MessageState.IN_TRANSIT);
+		final boolean result = nextLink.transmitMessage(direction, message);
+		if (!result) {
+			message.setMessageState(MessageState.DROPPED);
+			electLeader();
+		}
+		return result;
 	}
 
 	@Override
@@ -194,11 +220,15 @@ public class RouterImple implements Router, Runnable {
 	}
 
 	@Override
-	public void sendMessage(final Router dest, final int length) {
+	public boolean sendMessage(final Router dest, final int length) {
+		if (!isRunning()) {
+			return false;
+		}
 		final Message message = model.newDataMessage(this, dest, length);
 		message.setMessageState(MessageState.ENQUEUED);
 		messageQueue.add(message);
 		this.model.notifyModelChanged();
+		return true;
 	}
 
 	@Override
