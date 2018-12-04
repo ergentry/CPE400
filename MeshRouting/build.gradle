@@ -10,7 +10,7 @@
 	 id 'application'
  }
 
-defaultTasks 'clean', 'run'
+defaultTasks 'clean', 'build'
 
 mainClassName = 'networking.mesh.MeshMain'
 
