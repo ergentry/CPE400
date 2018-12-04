@@ -230,14 +230,19 @@ public class LinkImple implements Link, Runnable {
 			final Router right = routers.getFirst().getID() > routers.getSecond().getID() ? routers.getFirst()
 					: routers.getSecond();
 
+			boolean result = false;
 			if (direction == LinkDirection.Left_To_Right) {
 				LOGGER.info("Routing to " + right.getID());
-				right.routeMessage(message);
+				result = right.routeMessage(message);
 				leftToRight = null;
 			} else {
 				LOGGER.info("Routing to " + left.getID());
-				left.routeMessage(message);
+				result = left.routeMessage(message);
 				rightToLeft = null;
+			}
+
+			if (!result) {
+				stop();
 			}
 
 			this.model.notifyModelChanged();

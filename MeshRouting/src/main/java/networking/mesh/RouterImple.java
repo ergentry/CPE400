@@ -169,7 +169,6 @@ public class RouterImple implements Router, Runnable {
 			final List<Link> path = alg.getPath(this, message.getDestination());
 			if (path.isEmpty()) {
 				message.setMessageState(MessageState.UNROUTABLE);
-				return false;
 			} else {
 				final Link nextLink = path.get(0);
 				final Router nextRouter = this.model.getOpposite(this, nextLink);
@@ -184,6 +183,11 @@ public class RouterImple implements Router, Runnable {
 	boolean routeMessage(final Router nextRouter, final Link nextLink, final Message message) {
 		final LinkDirection direction = this.id < nextRouter.getID() ? LinkDirection.Left_To_Right
 				: LinkDirection.Right_To_Left;
+		if (!nextLink.isRunning()) {
+			message.setMessageState(MessageState.UNROUTABLE);
+			electLeader();
+		}
+
 		if (nextLink.inUse(direction)) {
 			message.setMessageState(MessageState.ENQUEUED);
 			messageQueue.add(message);
@@ -206,7 +210,7 @@ public class RouterImple implements Router, Runnable {
 			message.setMessageState(MessageState.UNROUTABLE);
 			electLeader();
 		}
-		return result;
+		return true;
 	}
 
 	@Override
