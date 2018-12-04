@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Tree<Key extends Comparable<Key>, Value> {
+public class TreeSet<Key extends Comparable<Key>, Value> {
 
 	// helper node data type
 	private class Node {
@@ -44,7 +44,7 @@ public class Tree<Key extends Comparable<Key>, Value> {
 
 	private final Node root;
 
-	public Tree(final Key key, final Value value) {
+	public TreeSet(final Key key, final Value value) {
 		this.root = new Node(null, key, value);
 	}
 

@@ -8,11 +8,11 @@ import java.util.List;
 
 import org.junit.Test;
 
-public class TreeTest {
+public class TreeSetTest {
 
 	@Test
 	public void testAddChild() {
-		final Tree<Integer, String> tree = new Tree<>(5, "hello");
+		final TreeSet<Integer, String> tree = new TreeSet<>(5, "hello");
 		tree.addChild(5, 7, "world");
 		assertEquals("hello", tree.get(5));
 		assertEquals("world", tree.get(7));
@@ -21,14 +21,14 @@ public class TreeTest {
 
 	@Test
 	public void testConstructor() {
-		final Tree<Integer, String> tree = new Tree<>(5, "hello");
+		final TreeSet<Integer, String> tree = new TreeSet<>(5, "hello");
 		final String value = tree.get(5);
 		assertEquals("hello", value);
 	}
 
 	@Test
 	public void testContains() {
-		final Tree<Integer, String> tree = new Tree<>(5, "hello");
+		final TreeSet<Integer, String> tree = new TreeSet<>(5, "hello");
 		tree.addChild(5, 7, "world");
 		tree.addChild(7, 6, "!");
 		tree.addChild(5, 8, "!");
@@ -41,7 +41,7 @@ public class TreeTest {
 
 	@Test
 	public void testPath() {
-		final Tree<Integer, String> tree = new Tree<>(5, "hello");
+		final TreeSet<Integer, String> tree = new TreeSet<>(5, "hello");
 		tree.addChild(5, 7, "world");
 		tree.addChild(7, 6, "!");
 		tree.addChild(5, 8, "!");
