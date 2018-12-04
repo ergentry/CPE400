@@ -121,7 +121,7 @@ public class MessageImple implements Message {
 		this.TTL = builder.getTtl();
 		this.messageState = MessageState.CREATED;
 		this.listeners = new ArrayList<>();
-		this.currentLocation = this.source.toString();
+		this.currentLocation = this.source != null ? this.source.toString() : "";
 	}
 
 	@Override
