@@ -100,16 +100,15 @@ public class MessageImple implements Message {
 	}
 
 	private final Router destination;
-
 	private final int id;
-
+	private volatile String currentLocation;
 	private final int length;
 	private final List<MessageListener> listeners;
+
 	private volatile MessageState messageState;
 	private final byte[] payload;
 	private final int priority;
 	private final Router source;
-
 	private int TTL;
 
 	MessageImple(final Builder builder) {
@@ -122,6 +121,7 @@ public class MessageImple implements Message {
 		this.TTL = builder.getTtl();
 		this.messageState = MessageState.CREATED;
 		this.listeners = new ArrayList<>();
+		this.currentLocation = this.source.toString();
 	}
 
 	@Override
@@ -135,7 +135,7 @@ public class MessageImple implements Message {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj) {
 			return true;
 		}
@@ -150,6 +150,11 @@ public class MessageImple implements Message {
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	public String getCurrentLocation() {
+		return currentLocation;
 	}
 
 	@Override
@@ -217,9 +222,23 @@ public class MessageImple implements Message {
 	}
 
 	@Override
-	public void setMessageState(MessageState state) {
+	public void setCurrentLocation(final String currentLocation) {
+		this.currentLocation = currentLocation;
+		notifyMessageListeners();
+	}
+
+	@Override
+	public void setMessageState(final MessageState state) {
 		this.messageState = state;
 		this.notifyMessageListeners();
+	}
+
+	@Override
+	public void setMessageStateAndCurrentLocation(final MessageState state, final String location) {
+		this.messageState = state;
+		this.currentLocation = location;
+		this.notifyMessageListeners();
+
 	}
 
 	@Override

@@ -16,6 +16,12 @@ public interface Message extends Comparable<Message> {
 
 	/**
 	 *
+	 * @return the current location of the message
+	 */
+	String getCurrentLocation();
+
+	/**
+	 *
 	 * @return Message destination
 	 */
 	Router getDestination();
@@ -68,7 +74,21 @@ public interface Message extends Comparable<Message> {
 	 */
 	void removeMessageListener(MessageListener messageListener);
 
+	/**
+	 * set the current location of the message;
+	 *
+	 * @param location
+	 */
+	void setCurrentLocation(String location);
+
+	/**
+	 * set the message state of the message.
+	 *
+	 * @param state
+	 */
 	void setMessageState(MessageState state);
+
+	void setMessageStateAndCurrentLocation(MessageState inTransit, String string);
 
 	/**
 	 *

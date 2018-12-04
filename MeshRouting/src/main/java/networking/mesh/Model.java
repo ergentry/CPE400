@@ -171,7 +171,7 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 		return this.linkFactory;
 	}
 
-	public List<Message> getMessages() {
+	public synchronized List<Message> getMessages() {
 		return new ArrayList<>(this.messages.values());
 	}
 
@@ -191,7 +191,8 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 	@Override
 	public void messageStateChanged(final Message message) {
 		System.out.println("Message " + message.getID() + " " + message.getSource() + "->" + message.getDestination()
-				+ " (TTL=" + message.getTTL() + ", State=" + message.getMessageState().name() + ")");
+				+ " (Location=" + message.getCurrentLocation() + ", TTL=" + message.getTTL() + ", State="
+				+ message.getMessageState().name() + ")");
 		if (message.getMessageState().isTerminal()) {
 			new Thread(() -> message.removeMessageListener(this)).start();
 		}
@@ -220,14 +221,14 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 		this.listeners.forEach(ModelListener::modelUpdated);
 	}
 
-	private void pruneMessages() {
+	private synchronized void pruneMessages() {
 		if (this.messages.size() > 200) {
 			final int first = this.messages.firstKey();
 			this.messages.remove(first);
 		}
 	}
 
-	public void remove(final Message message) {
+	public synchronized void remove(final Message message) {
 		this.messages.remove(message.getID());
 	}
 

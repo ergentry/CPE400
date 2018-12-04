@@ -3,13 +3,13 @@
  */
 package networking.mesh;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.collections15.Transformer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -146,6 +146,8 @@ public class RouterImple implements Router, Runnable {
 			return false;
 		}
 
+		message.setMessageStateAndCurrentLocation(MessageState.ENQUEUED, toString());
+
 		LOGGER.info("Router: " + getID() + " Routing message " + message.getID() + " " + message.getSource().getID()
 				+ " -> " + message.getDestination().getID());
 
@@ -155,17 +157,15 @@ public class RouterImple implements Router, Runnable {
 				return true;
 			}
 
-			// LOOK at our neighbors
-			final Collection<Link> links = this.model.getIncidentEdges(this);
-			for (final Link link : links) {
-				final Router router = model.getOpposite(this, link);
-				if (router == message.getDestination()) {
-					return routeMessage(router, link, message);
-				}
-			}
-
 			// COOL ROUTING ALGORITHM
-			final DijkstraShortestPath<Router, Link> alg = new DijkstraShortestPath<>(this.model);
+			final Transformer<Link, Double> weight = new Transformer<Link, Double>() {
+				@Override
+				public Double transform(final Link input) {
+					return input.isRunning() ? 1 : Double.MAX_VALUE;
+				};
+			};
+
+			final DijkstraShortestPath<Router, Link> alg = new DijkstraShortestPath<>(this.model, weight);
 			final List<Link> path = alg.getPath(this, message.getDestination());
 			if (path.isEmpty()) {
 				message.setMessageState(MessageState.UNROUTABLE);
@@ -176,7 +176,7 @@ public class RouterImple implements Router, Runnable {
 				return routeMessage(nextRouter, nextLink, message);
 			}
 		} catch (IllegalArgumentException | NullPointerException e) {
-			message.setMessageState(MessageState.DROPPED);
+			message.setMessageStateAndCurrentLocation(MessageState.DROPPED, toString());
 		}
 		return true;
 	}
@@ -191,10 +191,16 @@ public class RouterImple implements Router, Runnable {
 			return true;
 		}
 
-		message.setMessageState(MessageState.IN_TRANSIT);
+		message.setTTL(message.getTTL() - 1);
+
+		if (message.getTTL() == 0) {
+			message.setMessageState(MessageState.EXPIRED);
+			return true;
+		}
+
 		final boolean result = nextLink.transmitMessage(direction, message);
 		if (!result) {
-			message.setMessageState(MessageState.DROPPED);
+			message.setMessageState(MessageState.UNROUTABLE);
 			electLeader();
 		}
 		return result;

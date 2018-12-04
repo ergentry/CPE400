@@ -222,30 +222,25 @@ public class LinkImple implements Link, Runnable {
 			final Pair<Router> routers = this.model.getEndpoints(this);
 
 			if (routers == null || routers.getFirst() == null || routers.getSecond() == null) {
-				stop();
+				return;
 			}
 
 			final Router left = routers.getFirst().getID() < routers.getSecond().getID() ? routers.getFirst()
 					: routers.getSecond();
 			final Router right = routers.getFirst().getID() > routers.getSecond().getID() ? routers.getFirst()
 					: routers.getSecond();
-			boolean result = false;
 
 			if (direction == LinkDirection.Left_To_Right) {
 				LOGGER.info("Routing to " + right.getID());
-				result = right.routeMessage(message);
+				right.routeMessage(message);
 				leftToRight = null;
 			} else {
 				LOGGER.info("Routing to " + left.getID());
-				result = left.routeMessage(message);
+				left.routeMessage(message);
 				rightToLeft = null;
 			}
 
 			this.model.notifyModelChanged();
-
-			if (!result) {
-				stop();
-			}
 
 		} catch (final NullPointerException e) {
 			stop();
@@ -314,6 +309,8 @@ public class LinkImple implements Link, Runnable {
 		if (inUse(direction) || !isRunning()) {
 			return false;
 		}
+
+		message.setMessageStateAndCurrentLocation(MessageState.IN_TRANSIT, toString());
 
 		if (direction == LinkDirection.Left_To_Right) {
 			leftToRight = message;

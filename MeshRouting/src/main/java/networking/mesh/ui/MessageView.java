@@ -30,7 +30,7 @@ public class MessageView extends JPanel implements MessageListener {
 
 		@Override
 		public int getColumnCount() {
-			return 4;
+			return 6;
 		}
 
 		@Override
@@ -43,7 +43,11 @@ public class MessageView extends JPanel implements MessageListener {
 			case 2:
 				return "Destination";
 			case 3:
+				return "Location";
+			case 4:
 				return "State";
+			case 5:
+				return "TTL";
 			default:
 				throw new RuntimeException("Unknown column index " + columnIndex);
 			}
@@ -67,7 +71,11 @@ public class MessageView extends JPanel implements MessageListener {
 			case 2:
 				return message.getDestination().getID();
 			case 3:
+				return message.getCurrentLocation();
+			case 4:
 				return message.getMessageState().name().toLowerCase();
+			case 5:
+				return message.getTTL();
 			default:
 				throw new RuntimeException("Unknown column index " + columnIndex);
 			}
