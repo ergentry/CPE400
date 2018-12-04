@@ -45,6 +45,25 @@ public class MouseMenus {
 
 	}
 
+	public static class Leader extends JMenuItem implements VertexMenuListener<Router, Link> {
+		private static final long serialVersionUID = 1L;
+
+		private volatile Router v;
+
+		public Leader() {
+			super("Become Leader");
+			this.addActionListener(l -> {
+				v.setLeader(!v.isLeader());
+			});
+		}
+
+		@Override
+		public void setVertexAndView(final Router v, final VisualizationViewer<Router, Link> visComp) {
+			this.v = v;
+			this.setText(this.v.isLeader() ? "Stop Leading" : "Become Leader");
+		}
+	}
+
 	public static class StartStopLink extends JMenuItem implements EdgeMenuListener<Router, Link> {
 
 		private static final long serialVersionUID = 1L;
@@ -100,16 +119,9 @@ public class MouseMenus {
 			super("Vertex Menu");
 			this.add(new DeleteVertexMenuItem<Router, Link>());
 			this.addSeparator();
+			this.add(new Leader());
 			this.add(new StartStopRouter());
-		}
-	}
 
-	public static class WeightDisplay extends JMenuItem implements EdgeMenuListener<Router, Link> {
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		public void setEdgeAndView(final Link e, final VisualizationViewer<Router, Link> visComp) {
-			this.setText("Weight " + e + " = " + 500);
 		}
 	}
 

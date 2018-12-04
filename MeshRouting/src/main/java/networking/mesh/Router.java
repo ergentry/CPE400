@@ -61,6 +61,12 @@ public interface Router extends Comparable<Router> {
 	boolean sendMessage(Router dest, int length);
 
 	/**
+	 *
+	 * @param b
+	 */
+	void setLeader(boolean b);
+
+	/**
 	 * Start executing the router.
 	 */
 	void start();

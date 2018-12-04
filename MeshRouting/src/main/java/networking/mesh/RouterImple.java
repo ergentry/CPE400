@@ -245,6 +245,12 @@ public class RouterImple implements Router, Runnable {
 	}
 
 	@Override
+	public void setLeader(final boolean leader) {
+		this.leader = leader;
+
+	}
+
+	@Override
 	public void start() {
 		if (thread != null && thread.isAlive()) {
 			stop();

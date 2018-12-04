@@ -64,6 +64,12 @@ public class MessageImpleTest {
 		}
 
 		@Override
+		public void setLeader(final boolean b) {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
 		public void start() {
 			// TODO Auto-generated method stub
 
