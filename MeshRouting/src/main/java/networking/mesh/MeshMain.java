@@ -4,14 +4,12 @@ import javax.swing.SwingUtilities;
 
 import networking.mesh.ui.View;
 
-public class MeshMain
-{
+public class MeshMain {
 
-	public static void main(final String[] args)
-	{
+	public static void main(final String[] args) {
 		final Model model = new Model();
 		final Control control = new Control(model);
-		final View view = new View(model);
+		final View view = new View(model, control);
 		model.setMessageListener(view.getMessageListener());
 		view.pack();
 		SwingUtilities.invokeLater(() -> view.setVisible(true));

@@ -7,11 +7,13 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 import javax.swing.BorderFactory;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
+import networking.mesh.Control;
 import networking.mesh.Model;
 
 public class ControlPanel extends JPanel {
@@ -45,7 +47,7 @@ public class ControlPanel extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 
-	public ControlPanel(final Model model) {
+	public ControlPanel(final Model model, final Control control) {
 		this.setLayout(new BorderLayout());
 
 		final JTextField ttl = new JTextField(Integer.toString(model.getTimeToLive()), 10);
@@ -72,9 +74,17 @@ public class ControlPanel extends JPanel {
 			}
 		});
 
-		ttl.addKeyListener(new LocalKeyListener());
+		duration.addKeyListener(new LocalKeyListener());
 
-		final JPanel names = new JPanel(new GridLayout(2, 1));
+		final JLabel pauseLabel = new JLabel("Simulation");
+		pauseLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+
+		final JCheckBox pause = new JCheckBox("Pause");
+		pause.addActionListener(l -> {
+			control.setPaused(!control.isPaused());
+		});
+
+		final JPanel names = new JPanel(new GridLayout(3, 1));
 		names.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
 
 		final JLabel ttlLabel = new JLabel("TTL");
@@ -85,10 +95,12 @@ public class ControlPanel extends JPanel {
 
 		names.add(ttlLabel);
 		names.add(durationLabel);
+		names.add(pauseLabel);
 
-		final JPanel values = new JPanel(new GridLayout(2, 1));
+		final JPanel values = new JPanel(new GridLayout(3, 1));
 		values.add(ttl);
 		values.add(duration);
+		values.add(pause);
 
 		final JPanel display = new JPanel(new BorderLayout());
 		display.add(names, BorderLayout.WEST);

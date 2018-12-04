@@ -13,6 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 
+import networking.mesh.Control;
 import networking.mesh.MessageListener;
 import networking.mesh.Model;
 import networking.mesh.ModelListener;
@@ -26,10 +27,9 @@ public class View extends JFrame implements ModelListener {
 	private final RouterView routerList;
 	private final JTabbedPane tabbedPane;
 
-	public View(final Model model) {
+	public View(final Model model, final Control control) {
 		this.setTitle("Mesh simulator");
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
 		model.addModelListener(this);
 
 		this.setLayout(new BorderLayout());
@@ -49,7 +49,7 @@ public class View extends JFrame implements ModelListener {
 		eastPanel.add(this.tabbedPane, BorderLayout.CENTER);
 
 		final JPanel northEastPanel = new JPanel(new BorderLayout());
-		northEastPanel.add(new ControlPanel(model), BorderLayout.EAST);
+		northEastPanel.add(new ControlPanel(model, control), BorderLayout.EAST);
 		eastPanel.add(northEastPanel, BorderLayout.NORTH);
 
 		this.add(eastPanel, BorderLayout.EAST);
