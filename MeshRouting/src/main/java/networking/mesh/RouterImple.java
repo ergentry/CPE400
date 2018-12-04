@@ -191,7 +191,10 @@ public class RouterImple implements Router, Runnable {
 			return true;
 		}
 
-		message.setTTL(message.getTTL() - 1);
+		// Don't decrement the first hop.
+		if (!message.getSource().equals(this)) {
+			message.setTTL(message.getTTL() - 1);
+		}
 
 		if (message.getTTL() == 0) {
 			message.setMessageState(MessageState.EXPIRED);
