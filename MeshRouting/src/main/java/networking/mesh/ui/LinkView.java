@@ -40,9 +40,9 @@ public class LinkView extends JPanel {
 			case 0:
 				return "Link ID";
 			case 1:
-				return "Left";
+				return "Left to Right Msg";
 			case 2:
-				return "Right";
+				return "Right to Left Msg";
 			}
 			throw new IllegalArgumentException();
 		}
