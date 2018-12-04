@@ -15,10 +15,17 @@ public class Control implements Runnable {
 	private final SecureRandom random;
 	private volatile boolean paused;
 
+	private volatile int messageSize;
+
 	public Control(final Model model) {
 		this.model = model;
 		this.random = new SecureRandom();
 		this.paused = false;
+		messageSize = 1000;
+	}
+
+	public int getMessageSize() {
+		return messageSize;
 	}
 
 	public boolean isPaused() {
@@ -56,7 +63,12 @@ public class Control implements Runnable {
 
 	private void sendMessage(final Router source, final Router destination) {
 		Control.LOGGER.debug("Sending message from " + source + " to " + destination + ".");
-		source.sendMessage(destination, 1000);
+		source.sendMessage(destination, messageSize);
+	}
+
+	public void setMessageSize(final int newSize) {
+		this.messageSize = newSize;
+
 	}
 
 	public void setPaused(final boolean paused) {
