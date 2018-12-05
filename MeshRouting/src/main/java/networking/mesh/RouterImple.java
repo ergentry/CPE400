@@ -142,20 +142,20 @@ public class RouterImple implements Router, Runnable {
 	public boolean routeMessage(final Message message) {
 
 		if (!isRunning()) {
-			message.setMessageState(MessageState.DROPPED);
+			message.setMessageStateAndCurrentLocation(MessageState.DROPPED, toString());
 			return false;
 		}
 
-		message.setMessageStateAndCurrentLocation(MessageState.ENQUEUED, toString());
-
-		LOGGER.info("Router: " + getID() + " Routing message " + message.getID() + " " + message.getSource().getID()
-				+ " -> " + message.getDestination().getID());
-
 		try {
 			if (message.getDestination() == this) {
-				message.setMessageState(MessageState.RECEIVED);
+				message.setMessageStateAndCurrentLocation(MessageState.RECEIVED, toString());
 				return true;
 			}
+
+			message.setMessageStateAndCurrentLocation(MessageState.ENQUEUED, toString());
+
+			LOGGER.info("Router: " + getID() + " Routing message " + message.getID() + " " + message.getSource().getID()
+					+ " -> " + message.getDestination().getID());
 
 			if (message.getRouteTo() == this) {
 				message.setRouteTo(message.getDestination());
@@ -242,10 +242,11 @@ public class RouterImple implements Router, Runnable {
 		if (!isRunning()) {
 			return false;
 		}
+
 		final Message message = model.newDataMessage(this, dest, length);
-		message.setMessageState(MessageState.ENQUEUED);
 		messageQueue.add(message);
 		this.model.notifyModelChanged();
+
 		if (this.model.getLeader() != null) {
 			message.setRouteTo(this.model.getLeader());
 		} else {

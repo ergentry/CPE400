@@ -111,7 +111,7 @@ public class MessageImple implements Message {
 	private final Router source;
 	private int TTL;
 
-	private Router routeTo;
+	private volatile Router routeTo;
 
 	MessageImple(final Builder builder) {
 		this.id = builder.getId();
@@ -250,7 +250,7 @@ public class MessageImple implements Message {
 	}
 
 	@Override
-	public void setRouteTo(Router routeTo) {
+	public void setRouteTo(final Router routeTo) {
 		this.routeTo = routeTo;
 
 	}
