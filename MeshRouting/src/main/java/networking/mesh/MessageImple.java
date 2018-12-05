@@ -107,7 +107,7 @@ public class MessageImple implements Message {
 	private final List<MessageListener> listeners;
 	private volatile MessageState messageState;
 
-	private final byte[] payload;
+	private byte[] payload;
 	private int priority;
 	private final Router source;
 
@@ -236,7 +236,7 @@ public class MessageImple implements Message {
 		notifyMessageListeners();
 	}
 
-	protected void setLength(int length) {
+	protected void setLength(final int length) {
 		this.length = length;
 	}
 
@@ -254,7 +254,13 @@ public class MessageImple implements Message {
 
 	}
 
-	protected void setPriority(int priority) {
+	@Override
+	public void setPayload(final byte[] payload) {
+		this.payload = payload;
+	}
+
+	@Override
+	public void setPriority(final int priority) {
 		this.priority = priority;
 	}
 

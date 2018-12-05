@@ -3,6 +3,8 @@
  */
 package networking.mesh;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
@@ -53,6 +55,8 @@ public class RouterImple implements Router, Runnable {
 		}
 	}
 
+	private static final int LEADER_NOTIFICATION_TYPE = 2;
+
 	static final Logger LOGGER = LogManager.getLogger(RouterImple.class.getName());
 
 	public static Builder newInstance() {
@@ -75,6 +79,24 @@ public class RouterImple implements Router, Runnable {
 	@Override
 	public int compareTo(final Router o) {
 		return Integer.compare(this.id, o.getID());
+	}
+
+	private Message createLeaderNotification(final Router neighbor) {
+		final Message message = model.newControlMessage(this, neighbor);
+		message.setPriority(1);
+		message.setPayload(createNotificationPayload());
+		return message;
+	}
+
+	private byte[] createNotificationPayload() {
+		try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+			output.write(LEADER_NOTIFICATION_TYPE);
+			output.write(getID());
+			return output.toByteArray();
+		} catch (final IOException e) {
+			e.printStackTrace();
+		}
+		return new byte[0];
 	}
 
 	@Override
@@ -261,14 +283,15 @@ public class RouterImple implements Router, Runnable {
 		this.leader = leader;
 		this.model.setLeader(this);
 		// Send a message to all routers that are connected to this router
-		final Collection<Router> neighbors = this.model.getNeighbors(this);
-		for (final Router neighbor : neighbors) {
-			final LeaderNotification notification = new LeaderNotification(
-					MessageImple.newInstance().setDestination(neighbor), getID());
-			messageQueue.add(notification);
+		if (leader) {
+			final Collection<Router> neighbors = this.model.getNeighbors(this);
+			for (final Router neighbor : neighbors) {
+				final Message notification = createLeaderNotification(neighbor);
+				notification.setRouteTo(neighbor);
+				messageQueue.add(notification);
+			}
+			model.notifyModelChanged();
 		}
-		model.notifyModelChanged();
-
 	}
 
 	@Override

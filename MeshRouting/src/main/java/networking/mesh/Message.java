@@ -92,6 +92,18 @@ public interface Message extends Comparable<Message> {
 
 	void setMessageStateAndCurrentLocation(MessageState inTransit, String string);
 
+	/**
+	 *
+	 * @param payload
+	 */
+	void setPayload(byte[] payload);
+
+	/**
+	 *
+	 * @param priority
+	 */
+	void setPriority(int priority);
+
 	void setRouteTo(Router routeTo);
 
 	/**
