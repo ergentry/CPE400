@@ -85,15 +85,15 @@ public class GraphPanel extends JPanel {
 		});
 
 		this.vv.getRenderContext().setVertexFillPaintTransformer(v -> {
+			if (!v.isRunning()) {
+				return Color.RED;
+			}
+
 			if (v.isLeader()) {
 				return Color.YELLOW;
 			}
 
-			if (v.isRunning()) {
-				return Color.GREEN;
-			}
-
-			return Color.RED;
+			return Color.GREEN;
 		});
 
 		this.vv.getRenderContext().setVertexLabelTransformer(MapTransformer.<Router, String>getInstance(
