@@ -157,6 +157,10 @@ public class RouterImple implements Router, Runnable {
 				return true;
 			}
 
+			if (message.getRouteTo() == this) {
+				message.setRouteTo(message.getDestination());
+			}
+
 			// COOL ROUTING ALGORITHM
 			final Transformer<Link, Double> weight = new Transformer<Link, Double>() {
 				@Override
@@ -253,7 +257,7 @@ public class RouterImple implements Router, Runnable {
 	@Override
 	public void setLeader(final boolean leader) {
 		this.leader = leader;
-
+		this.model.setLeader(this);
 	}
 
 	@Override
