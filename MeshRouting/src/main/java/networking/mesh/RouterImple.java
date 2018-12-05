@@ -162,11 +162,11 @@ public class RouterImple implements Router, Runnable {
 				@Override
 				public Double transform(final Link input) {
 					return input.isRunning() ? 1 : Double.MAX_VALUE;
-				};
+				}
 			};
 
 			final DijkstraShortestPath<Router, Link> alg = new DijkstraShortestPath<>(this.model, weight);
-			final List<Link> path = alg.getPath(this, message.getDestination());
+			final List<Link> path = alg.getPath(this, message.getRouteTo());
 			if (path.isEmpty()) {
 				message.setMessageState(MessageState.UNROUTABLE);
 			} else {
@@ -234,6 +234,7 @@ public class RouterImple implements Router, Runnable {
 
 	@Override
 	public boolean sendMessage(final Router dest, final int length) {
+
 		if (!isRunning()) {
 			return false;
 		}
@@ -241,6 +242,11 @@ public class RouterImple implements Router, Runnable {
 		message.setMessageState(MessageState.ENQUEUED);
 		messageQueue.add(message);
 		this.model.notifyModelChanged();
+		if (this.model.getLeader() != null) {
+			message.setRouteTo(this.model.getLeader());
+		} else {
+			message.setRouteTo(dest);
+		}
 		return true;
 	}
 

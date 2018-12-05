@@ -111,6 +111,8 @@ public class MessageImple implements Message {
 	private final Router source;
 	private int TTL;
 
+	private Router routeTo;
+
 	MessageImple(final Builder builder) {
 		this.id = builder.getId();
 		this.length = builder.getLength();
@@ -191,6 +193,12 @@ public class MessageImple implements Message {
 	}
 
 	@Override
+	public Router getRouteTo() {
+
+		return routeTo;
+	}
+
+	@Override
 	public Router getSource() {
 
 		return this.source;
@@ -238,6 +246,12 @@ public class MessageImple implements Message {
 		this.messageState = state;
 		this.currentLocation = location;
 		this.notifyMessageListeners();
+
+	}
+
+	@Override
+	public void setRouteTo(Router routeTo) {
+		this.routeTo = routeTo;
 
 	}
 

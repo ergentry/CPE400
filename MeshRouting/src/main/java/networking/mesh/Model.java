@@ -95,11 +95,15 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 	}
 
 	private static final long serialVersionUID = 1L;
-	private final LinkFactory linkFactory;
-	private final List<ModelListener> listeners;
 
+	private volatile Router leader;
+
+	private final LinkFactory linkFactory;
+
+	private final List<ModelListener> listeners;
 	private final MessageFactory messageFactory;
 	private final TreeMap<Integer, Message> messages;
+
 	private final RouterFactory routerFactory;
 	private volatile long sleepDuration;
 
@@ -165,6 +169,10 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 		final Router node = this.routerFactory.create();
 		this.addVertex(node);
 		return node;
+	}
+
+	public Router getLeader() {
+		return leader;
 	}
 
 	public Factory<Link> getLinkFactory() {
@@ -252,6 +260,10 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 			this.notifyModelChanged();
 		}
 		return removed;
+	}
+
+	public void setLeader(Router leader) {
+		this.leader = leader;
 	}
 
 	@Override

@@ -56,6 +56,8 @@ public interface Message extends Comparable<Message> {
 	 */
 	int getPriority();
 
+	Router getRouteTo();
+
 	/**
 	 *
 	 * @return Message source
@@ -89,6 +91,8 @@ public interface Message extends Comparable<Message> {
 	void setMessageState(MessageState state);
 
 	void setMessageStateAndCurrentLocation(MessageState inTransit, String string);
+
+	void setRouteTo(Router routeTo);
 
 	/**
 	 *
