@@ -100,17 +100,18 @@ public class MessageImple implements Message {
 	}
 
 	private final Router destination;
+
 	private final int id;
 	private volatile String currentLocation;
-	private final int length;
+	private volatile int length;
 	private final List<MessageListener> listeners;
-
 	private volatile MessageState messageState;
-	private final byte[] payload;
-	private final int priority;
-	private final Router source;
-	private int TTL;
 
+	private final byte[] payload;
+	private int priority;
+	private final Router source;
+
+	private int TTL;
 	private volatile Router routeTo;
 
 	MessageImple(final Builder builder) {
@@ -235,6 +236,10 @@ public class MessageImple implements Message {
 		notifyMessageListeners();
 	}
 
+	protected void setLength(int length) {
+		this.length = length;
+	}
+
 	@Override
 	public void setMessageState(final MessageState state) {
 		this.messageState = state;
@@ -247,6 +252,10 @@ public class MessageImple implements Message {
 		this.currentLocation = location;
 		this.notifyMessageListeners();
 
+	}
+
+	protected void setPriority(int priority) {
+		this.priority = priority;
 	}
 
 	@Override

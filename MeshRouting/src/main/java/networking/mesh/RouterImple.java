@@ -3,6 +3,7 @@
  */
 package networking.mesh;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -259,6 +260,15 @@ public class RouterImple implements Router, Runnable {
 	public void setLeader(final boolean leader) {
 		this.leader = leader;
 		this.model.setLeader(this);
+		// Send a message to all routers that are connected to this router
+		final Collection<Router> neighbors = this.model.getNeighbors(this);
+		for (final Router neighbor : neighbors) {
+			final LeaderNotification notification = new LeaderNotification(
+					MessageImple.newInstance().setDestination(neighbor), getID());
+			messageQueue.add(notification);
+		}
+		model.notifyModelChanged();
+
 	}
 
 	@Override
