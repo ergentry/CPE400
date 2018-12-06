@@ -199,8 +199,8 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 	@Override
 	public void messageStateChanged(final Message message) {
 		System.out.println("Message " + message.getID() + " " + message.getSource() + "->" + message.getDestination()
-				+ " (Location=" + message.getCurrentLocation() + ", TTL=" + message.getTTL() + ", State="
-				+ message.getMessageState().name() + ")");
+				+ " (Location=" + message.getCurrentLocation() + ", TTL=" + message.getTTL() + ", Priority="
+				+ message.getPriority() + ", State=" + message.getMessageState().name() + ")");
 		if (message.getMessageState().isTerminal()) {
 			new Thread(() -> message.removeMessageListener(this)).start();
 		}
@@ -223,17 +223,6 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 		this.messages.put(message.getID(), message);
 		this.notifyModelChanged();
 		return message;
-	}
-
-	void notifyModelChanged() {
-		this.listeners.forEach(ModelListener::modelUpdated);
-	}
-
-	private synchronized void pruneMessages() {
-		if (this.messages.size() > 200) {
-			final int first = this.messages.firstKey();
-			this.messages.remove(first);
-		}
 	}
 
 	public synchronized void remove(final Message message) {
@@ -262,7 +251,7 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 		return removed;
 	}
 
-	public void setLeader(Router leader) {
+	public void setLeader(final Router leader) {
 		this.leader = leader;
 	}
 
@@ -278,5 +267,16 @@ public class Model extends UndirectedSparseMultigraph<Router, Link> implements M
 	@Override
 	public void setTimeToLive(final int ttl) {
 		this.messageFactory.setTimeToLive(ttl);
+	}
+
+	private synchronized void pruneMessages() {
+		if (this.messages.size() > 200) {
+			final int first = this.messages.firstKey();
+			this.messages.remove(first);
+		}
+	}
+
+	void notifyModelChanged() {
+		this.listeners.forEach(ModelListener::modelUpdated);
 	}
 }

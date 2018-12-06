@@ -30,34 +30,6 @@ public class MessageImple implements Message {
 			return new MessageImple(this);
 		}
 
-		Router getDestination() {
-			return this.destination;
-		}
-
-		int getId() {
-			return this.id;
-		}
-
-		int getLength() {
-			return this.length;
-		}
-
-		byte[] getPayload() {
-			return this.payload;
-		}
-
-		int getPriority() {
-			return this.priority;
-		}
-
-		Router getSource() {
-			return this.source;
-		}
-
-		int getTtl() {
-			return this.ttl;
-		}
-
 		public Builder setDestination(final Router destination) {
 			this.destination = destination;
 			return this;
@@ -93,6 +65,34 @@ public class MessageImple implements Message {
 			return this;
 		}
 
+		Router getDestination() {
+			return this.destination;
+		}
+
+		int getId() {
+			return this.id;
+		}
+
+		int getLength() {
+			return this.length;
+		}
+
+		byte[] getPayload() {
+			return this.payload;
+		}
+
+		int getPriority() {
+			return this.priority;
+		}
+
+		Router getSource() {
+			return this.source;
+		}
+
+		int getTtl() {
+			return this.ttl;
+		}
+
 	}
 
 	public static Builder newInstance() {
@@ -107,8 +107,8 @@ public class MessageImple implements Message {
 	private final List<MessageListener> listeners;
 	private volatile MessageState messageState;
 
-	private byte[] payload;
-	private int priority;
+	private volatile byte[] payload;
+	private volatile int priority;
 	private final Router source;
 
 	private int TTL;
@@ -173,7 +173,7 @@ public class MessageImple implements Message {
 
 	@Override
 	public int getLength() {
-		return this.length;
+		return this.payload == null ? this.length : this.payload.length;
 	}
 
 	@Override
@@ -219,12 +219,6 @@ public class MessageImple implements Message {
 		return result;
 	}
 
-	void notifyMessageListeners() {
-		final List<MessageListener> receipients = new ArrayList<MessageListener>();
-		receipients.addAll(listeners);
-		receipients.forEach(l -> l.messageStateChanged(this));
-	}
-
 	@Override
 	public void removeMessageListener(final MessageListener messageListener) {
 		this.listeners.remove(messageListener);
@@ -234,10 +228,6 @@ public class MessageImple implements Message {
 	public void setCurrentLocation(final String currentLocation) {
 		this.currentLocation = currentLocation;
 		notifyMessageListeners();
-	}
-
-	protected void setLength(final int length) {
-		this.length = length;
 	}
 
 	@Override
@@ -279,5 +269,15 @@ public class MessageImple implements Message {
 	@Override
 	public String toString() {
 		return Integer.toString(id);
+	}
+
+	protected void setLength(final int length) {
+		this.length = length;
+	}
+
+	void notifyMessageListeners() {
+		final List<MessageListener> receipients = new ArrayList<MessageListener>();
+		receipients.addAll(listeners);
+		receipients.forEach(l -> l.messageStateChanged(this));
 	}
 }

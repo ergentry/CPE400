@@ -67,9 +67,9 @@ public class MessageView extends JPanel implements MessageListener {
 			case 0:
 				return message.getID();
 			case 1:
-				return message.getSource().getID();
+				return message.getSource().toString();
 			case 2:
-				return message.getDestination().getID();
+				return message.getDestination().toString();
 			case 3:
 				return message.getCurrentLocation();
 			case 4:

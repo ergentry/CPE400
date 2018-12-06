@@ -40,14 +40,6 @@ public class RouterImple implements Router, Runnable {
 			return new RouterImple(this);
 		}
 
-		int getId() {
-			return this.id;
-		}
-
-		Model getModel() {
-			return this.model;
-		}
-
 		public Builder setId(final int id) {
 			this.id = id;
 			return this;
@@ -56,6 +48,14 @@ public class RouterImple implements Router, Runnable {
 		public Builder setModel(final Model model) {
 			this.model = model;
 			return this;
+		}
+
+		int getId() {
+			return this.id;
+		}
+
+		Model getModel() {
+			return this.model;
 		}
 	}
 
@@ -67,15 +67,15 @@ public class RouterImple implements Router, Runnable {
 		return new Builder();
 	}
 
+	Map<Integer, Integer> cache = new HashMap<>();
 	private final int id;
+	private volatile boolean leader;
 	private final BlockingQueue<Message> messageQueue;
 	private final Model model;
+
+	private final AtomicInteger nextNonce = new AtomicInteger();
+
 	private volatile Thread thread;
-	private volatile boolean leader;
-
-	private final AtomicInteger nextNoche = new AtomicInteger();
-
-	Map<Integer, Integer> cache = new HashMap<>();
 
 	RouterImple(final Builder builder) {
 		this.id = builder.getId();
@@ -87,26 +87,6 @@ public class RouterImple implements Router, Runnable {
 	@Override
 	public int compareTo(final Router o) {
 		return Integer.compare(this.id, o.getID());
-	}
-
-	private Message createLeaderNotification(final Router neighbor) {
-		final Message message = model.newControlMessage(this, neighbor);
-		message.setPriority(1);
-
-		message.setPayload(createNotificationPayload());
-		return message;
-	}
-
-	private byte[] createNotificationPayload() {
-		try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-			output.write(LEADER_NOTIFICATION_TYPE);
-			output.write(nextNoche.incrementAndGet());
-			output.write(getID());
-			return output.toByteArray();
-		} catch (final IOException e) {
-			e.printStackTrace();
-		}
-		return new byte[0];
 	}
 
 	@Override
@@ -181,6 +161,9 @@ public class RouterImple implements Router, Runnable {
 
 		try {
 			if (message.getDestination() == this) {
+				if (message.getPriority() == 1) {
+					processControlMessage(message);
+				}
 				message.setMessageStateAndCurrentLocation(MessageState.RECEIVED, toString());
 				return true;
 			}
@@ -189,12 +172,6 @@ public class RouterImple implements Router, Runnable {
 
 			LOGGER.info("Router: " + getID() + " Routing message " + message.getID() + " " + message.getSource().getID()
 					+ " -> " + message.getDestination().getID());
-
-			if (message.getPriority() == 1) {
-				sendLeaderNotification(message);
-				message.setMessageState(MessageState.RECEIVED);
-				return true;
-			}
 
 			if (message.getRouteTo() == this) {
 				message.setRouteTo(message.getDestination());
@@ -221,6 +198,153 @@ public class RouterImple implements Router, Runnable {
 			message.setMessageStateAndCurrentLocation(MessageState.DROPPED, toString());
 		}
 		return true;
+	}
+
+	@Override
+	public void run() {
+		try {
+			while (true) {
+
+				final Message message = messageQueue.poll(500, TimeUnit.MILLISECONDS);
+				if (message != null) {
+					LOGGER.debug("Received message " + message.getID() + ".");
+					this.model.notifyModelChanged();
+					routeMessage(message);
+				}
+				Thread.sleep(100);
+			}
+		} catch (final InterruptedException e) {
+			// empty for now ):
+		}
+
+	}
+
+	@Override
+	public boolean sendMessage(final Router dest, final int length) {
+
+		if (!isRunning()) {
+			return false;
+		}
+
+		final Message message = model.newDataMessage(this, dest, length);
+		messageQueue.add(message);
+		this.model.notifyModelChanged();
+
+		if (this.model.getLeader() != null) {
+			message.setRouteTo(this.model.getLeader());
+		} else {
+			message.setRouteTo(dest);
+		}
+		return true;
+	}
+
+	@Override
+	public void setLeader(final boolean leader) {
+		this.leader = leader;
+		this.model.setLeader(this);
+		// Send a message to all routers that are connected to this router
+		if (leader) {
+			final int nonce = nextNonce.incrementAndGet();
+			final Collection<Router> neighbors = this.model.getNeighbors(this);
+			for (final Router neighbor : neighbors) {
+				final Message notification = createLeaderNotification(neighbor, nonce);
+				notification.setRouteTo(neighbor);
+				messageQueue.add(notification);
+			}
+		}
+		model.notifyModelChanged();
+	}
+
+	@Override
+	public void start() {
+		if (thread != null && thread.isAlive()) {
+			stop();
+		}
+
+		thread = new Thread(this);
+		thread.start();
+
+	}
+
+	@Override
+	public void stop() {
+		if (thread != null) {
+			thread.interrupt();
+			thread = null;
+		}
+
+	}
+
+	@Override
+	public String toString() {
+		return "R" + id;
+	}
+
+	private Message createLeaderNotification(final Router neighbor, final int nonce) {
+		final Message message = model.newControlMessage(this, neighbor);
+		message.setPriority(1);
+
+		message.setPayload(createNotificationPayload(nonce));
+		return message;
+	}
+
+	private byte[] createNotificationPayload(final int nonce) {
+		try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+			output.write(LEADER_NOTIFICATION_TYPE);
+			output.write(nonce);
+			output.write(getID());
+			return output.toByteArray();
+		} catch (final IOException e) {
+			e.printStackTrace();
+		}
+		return new byte[0];
+	}
+
+	private void processControlMessage(final Message message) {
+		if (message.getTTL() == 0) {
+			return;
+		}
+		int leadRouter = 0;
+		int messageNonce = 0;
+
+		try (ByteArrayInputStream input = new ByteArrayInputStream(message.getPayload())) {
+			final int type = input.read();
+			if (type != LEADER_NOTIFICATION_TYPE) {
+				return;
+			}
+			messageNonce = input.read();
+			leadRouter = input.read();
+		} catch (final IOException e) {
+
+			e.printStackTrace();
+			return;
+		}
+
+		if (cache.containsKey(leadRouter)) {
+			final int nonche = cache.get(leadRouter);
+			if (nonche == messageNonce) {
+				return;
+			}
+		}
+		cache.put(leadRouter, messageNonce);
+
+		if (leader && leadRouter != this.getID()) {
+			this.setLeader(false);
+		}
+
+		final Collection<Router> neighbors = this.model.getNeighbors(this);
+		for (final Router neighbor : neighbors) {
+			if (!neighbor.equals(message.getSource())) {
+				final Message notification = model.newControlMessage(this, neighbor);
+				notification.setTTL(message.getTTL() - 1);
+				notification.setPayload(message.getPayload());
+				notification.setPriority(1);
+				notification.setRouteTo(neighbor);
+				messageQueue.add(notification);
+			}
+		}
+		model.notifyModelChanged();
+
 	}
 
 	boolean routeMessage(final Router nextRouter, final Link nextLink, final Message message) {
@@ -254,126 +378,6 @@ public class RouterImple implements Router, Runnable {
 			electLeader();
 		}
 		return true;
-	}
-
-	@Override
-	public void run() {
-		try {
-			while (true) {
-
-				final Message message = messageQueue.poll(500, TimeUnit.MILLISECONDS);
-				if (message != null) {
-					LOGGER.debug("Received message " + message.getID() + ".");
-					this.model.notifyModelChanged();
-					routeMessage(message);
-				}
-				Thread.sleep(100);
-			}
-		} catch (final InterruptedException e) {
-			// empty for now ):
-		}
-
-	}
-
-	private void sendLeaderNotification(Message message) {
-		if (message.getTTL() == 0) {
-			return;
-		}
-		int leader = 0;
-		int messageNonche = 0;
-
-		try (ByteArrayInputStream input = new ByteArrayInputStream(message.getPayload())) {
-			final int type = input.read();
-			if (type != LEADER_NOTIFICATION_TYPE) {
-				return;
-			}
-			messageNonche = input.read();
-			leader = input.read();
-		} catch (final IOException e) {
-
-			e.printStackTrace();
-			return;
-		}
-
-		if (cache.containsKey(leader)) {
-			final int nonche = cache.get(leader);
-			if (nonche == messageNonche) {
-				return;
-			}
-
-		}
-		cache.put(leader, messageNonche);
-
-		final Collection<Router> neighbors = this.model.getNeighbors(this);
-		for (final Router neighbor : neighbors) {
-			final Message notification = createLeaderNotification(neighbor);
-			notification.setTTL(message.getTTL() - 1);
-			notification.setPayload(message.getPayload());
-			notification.setRouteTo(neighbor);
-			messageQueue.add(notification);
-		}
-		model.notifyModelChanged();
-
-	}
-
-	@Override
-	public boolean sendMessage(final Router dest, final int length) {
-
-		if (!isRunning()) {
-			return false;
-		}
-
-		final Message message = model.newDataMessage(this, dest, length);
-		messageQueue.add(message);
-		this.model.notifyModelChanged();
-
-		if (this.model.getLeader() != null) {
-			message.setRouteTo(this.model.getLeader());
-		} else {
-			message.setRouteTo(dest);
-		}
-		return true;
-	}
-
-	@Override
-	public void setLeader(final boolean leader) {
-		this.leader = leader;
-		this.model.setLeader(this);
-		// Send a message to all routers that are connected to this router
-		if (leader) {
-			final Collection<Router> neighbors = this.model.getNeighbors(this);
-			for (final Router neighbor : neighbors) {
-				final Message notification = createLeaderNotification(neighbor);
-				notification.setRouteTo(neighbor);
-				messageQueue.add(notification);
-			}
-			model.notifyModelChanged();
-		}
-	}
-
-	@Override
-	public void start() {
-		if (thread != null && thread.isAlive()) {
-			stop();
-		}
-
-		thread = new Thread(this);
-		thread.start();
-
-	}
-
-	@Override
-	public void stop() {
-		if (thread != null) {
-			thread.interrupt();
-			thread = null;
-		}
-
-	}
-
-	@Override
-	public String toString() {
-		return "R" + id;
 	}
 
 }
