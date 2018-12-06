@@ -3,14 +3,18 @@
  */
 package networking.mesh;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.collections15.Transformer;
 import org.apache.logging.log4j.LogManager;
@@ -69,6 +73,10 @@ public class RouterImple implements Router, Runnable {
 	private volatile Thread thread;
 	private volatile boolean leader;
 
+	private final AtomicInteger nextNoche = new AtomicInteger();
+
+	Map<Integer, Integer> cache = new HashMap<>();
+
 	RouterImple(final Builder builder) {
 		this.id = builder.getId();
 		this.messageQueue = new ArrayBlockingQueue<Message>(100);
@@ -84,6 +92,7 @@ public class RouterImple implements Router, Runnable {
 	private Message createLeaderNotification(final Router neighbor) {
 		final Message message = model.newControlMessage(this, neighbor);
 		message.setPriority(1);
+
 		message.setPayload(createNotificationPayload());
 		return message;
 	}
@@ -91,6 +100,7 @@ public class RouterImple implements Router, Runnable {
 	private byte[] createNotificationPayload() {
 		try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
 			output.write(LEADER_NOTIFICATION_TYPE);
+			output.write(nextNoche.incrementAndGet());
 			output.write(getID());
 			return output.toByteArray();
 		} catch (final IOException e) {
@@ -180,6 +190,12 @@ public class RouterImple implements Router, Runnable {
 			LOGGER.info("Router: " + getID() + " Routing message " + message.getID() + " " + message.getSource().getID()
 					+ " -> " + message.getDestination().getID());
 
+			if (message.getPriority() == 1) {
+				sendLeaderNotification(message);
+				message.setMessageState(MessageState.RECEIVED);
+				return true;
+			}
+
 			if (message.getRouteTo() == this) {
 				message.setRouteTo(message.getDestination());
 			}
@@ -256,6 +272,47 @@ public class RouterImple implements Router, Runnable {
 		} catch (final InterruptedException e) {
 			// empty for now ):
 		}
+
+	}
+
+	private void sendLeaderNotification(Message message) {
+		if (message.getTTL() == 0) {
+			return;
+		}
+		int leader = 0;
+		int messageNonche = 0;
+
+		try (ByteArrayInputStream input = new ByteArrayInputStream(message.getPayload())) {
+			final int type = input.read();
+			if (type != LEADER_NOTIFICATION_TYPE) {
+				return;
+			}
+			messageNonche = input.read();
+			leader = input.read();
+		} catch (final IOException e) {
+
+			e.printStackTrace();
+			return;
+		}
+
+		if (cache.containsKey(leader)) {
+			final int nonche = cache.get(leader);
+			if (nonche == messageNonche) {
+				return;
+			}
+
+		}
+		cache.put(leader, messageNonche);
+
+		final Collection<Router> neighbors = this.model.getNeighbors(this);
+		for (final Router neighbor : neighbors) {
+			final Message notification = createLeaderNotification(neighbor);
+			notification.setTTL(message.getTTL() - 1);
+			notification.setPayload(message.getPayload());
+			notification.setRouteTo(neighbor);
+			messageQueue.add(notification);
+		}
+		model.notifyModelChanged();
 
 	}
 
